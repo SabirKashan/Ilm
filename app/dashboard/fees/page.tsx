@@ -151,23 +151,20 @@ export default function FeesPage() {
   }
 
   async function handleGenerate() {
-    if (!genClassId || !genFeeTypeId || !genDueDate || genStudents.length === 0 || !schoolId) return;
-    const feeType = feeTypes.find((f) => f.id === genFeeTypeId);
-    if (!feeType) return;
+    if (!genClassId || !genFeeTypeId || !genDueDate || genStudents.length === 0) return;
     setGenerating(true);
-    const rows = genStudents.map((s) => ({
-      school_id: schoolId,
-      student_id: s.id,
-      fee_type_id: genFeeTypeId,
-      amount: feeType.amount,
-      due_date: genDueDate,
-      status: "pending" as const,
-      whatsapp_sent: false,
-    }));
-    const { error } = await (supabase as any).from("fee_vouchers").insert(rows);
+    const res = await fetch("/api/fees/vouchers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ classId: genClassId, feeTypeId: genFeeTypeId, dueDate: genDueDate }),
+    });
+    const json = await res.json();
     setGenerating(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`${rows.length} vouchers generated`);
+    if (!res.ok) { toast.error(json.error ?? "Failed to generate vouchers"); return; }
+    const msg = json.sentCount > 0
+      ? `${json.voucherCount} vouchers generated — ${json.sentCount} WhatsApp messages sent`
+      : `${json.voucherCount} vouchers generated`;
+    toast.success(msg);
     setShowGenerate(false);
     setGenClassId(""); setGenFeeTypeId(""); setGenDueDate(""); setGenStudents([]);
     fetchVouchers();

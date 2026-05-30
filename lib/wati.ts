@@ -77,6 +77,24 @@ export function sendLateAlert(
   );
 }
 
+export function sendFeeVoucher(
+  parentPhone: string,
+  studentName: string,
+  feeType: string,
+  amount: string,
+  dueDate: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_fee_voucher",
+    [studentName, feeType, amount, dueDate],
+    endpoint,
+    token
+  );
+}
+
 export function sendAnnouncement(
   parentPhone: string,
   title: string,
