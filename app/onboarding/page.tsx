@@ -102,14 +102,17 @@ export default function OnboardingPage() {
     try {
       const schoolId = await getSchoolId();
 
+      const currentYear = new Date().getFullYear().toString();
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any).from("classes").insert({
         school_id: schoolId,
         name: className.trim(),
-        grade_level: 1,
+        grade_level: null,
+        academic_year: currentYear,
       }).select("id").single();
 
-      if (error) throw error;
+      if (error) throw new Error(error.message ?? JSON.stringify(error));
       setClassId(data.id);
       setStep(3);
     } catch (err) {
@@ -137,7 +140,7 @@ export default function OnboardingPage() {
         parent_phone: phone,
         status: "active",
       }).select("id").single();
-      if (stuErr) throw stuErr;
+      if (stuErr) throw new Error(stuErr.message ?? JSON.stringify(stuErr));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any).from("schools").update({ onboarding_complete: true }).eq("id", schoolId);
