@@ -156,7 +156,7 @@ export default function ClassesPage() {
         </div>
       )}
 
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      <Dialog open={showAdd} modal={false} onOpenChange={setShowAdd}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Add Class</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">

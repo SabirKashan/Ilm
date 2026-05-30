@@ -357,7 +357,7 @@ export default function StudentsPage() {
       )}
 
       {/* Add Student Dialog */}
-      <Dialog open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) { setStep(1); setForm(EMPTY_FORM); setPhotoFile(null); setPhotoPreview(null); } }}>
+      <Dialog open={showAdd} modal={false} onOpenChange={(o) => { setShowAdd(o); if (!o) { setStep(1); setForm(EMPTY_FORM); setPhotoFile(null); setPhotoPreview(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Add Student — Step {step} of 2</DialogTitle>

@@ -334,7 +334,7 @@ export default function ClassDetailPage() {
       </Tabs>
 
       {/* Edit Class Dialog */}
-      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+      <Dialog open={showEdit} modal={false} onOpenChange={setShowEdit}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Edit Class</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
@@ -428,7 +428,7 @@ export default function ClassDetailPage() {
       </Dialog>
 
       {/* Assign Student Dialog */}
-      <Dialog open={showAddStudent} onOpenChange={setShowAddStudent}>
+      <Dialog open={showAddStudent} modal={false} onOpenChange={setShowAddStudent}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Add Student to Class</DialogTitle></DialogHeader>
           <div className="space-y-2 py-2">

@@ -404,7 +404,7 @@ export default function PayrollPage() {
       )}
 
       {/* ── ADD ADVANCE DIALOG ── */}
-      <Dialog open={showAddAdvance} onOpenChange={(o) => {
+      <Dialog open={showAddAdvance} modal={false} onOpenChange={(o) => {
         setShowAddAdvance(o);
         if (!o) { setAdvTeacherId(""); setAdvAmount(""); setAdvReason(""); }
       }}>

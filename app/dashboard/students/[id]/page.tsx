@@ -119,7 +119,7 @@ export default function StudentProfilePage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [vouchers, setVouchers] = useState<FeeVoucher[]>([]);
-  const [results, setResults] = useState<(Result & { exam: Exam | null })[]>([]);
+  const [results, setResults] = useState<(Result & { exam: Exam | null; subjects: { name: string } | null })[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showEdit, setShowEdit] = useState(false);
@@ -139,7 +139,7 @@ export default function StudentProfilePage() {
       supabase.from("students").select("*").eq("id", id).single(),
       supabase.from("attendance").select("*").eq("student_id", id).order("date", { ascending: false }),
       supabase.from("fee_vouchers").select("*").eq("student_id", id).order("due_date", { ascending: false }),
-      supabase.from("results").select("*").eq("student_id", id),
+      supabase.from("results").select("*, subjects(name)").eq("student_id", id),
       supabase.from("exams").select("*"),
       supabase.from("classes").select("*").order("name"),
     ]);
@@ -154,7 +154,7 @@ export default function StudentProfilePage() {
     setVouchers((voucherRows ?? []) as FeeVoucher[]);
 
     const examMap = Object.fromEntries(((examRows ?? []) as Exam[]).map((e) => [e.id, e]));
-    setResults(((resultRows ?? []) as Result[]).map((r) => ({ ...r, exam: examMap[r.exam_id] ?? null })));
+    setResults(((resultRows ?? []) as (Result & { subjects: { name: string } | null })[]).map((r) => ({ ...r, exam: examMap[r.exam_id] ?? null })));
 
     if (s.class_id) {
       const found = ((classRows ?? []) as Class[]).find((c) => c.id === s.class_id);
@@ -310,21 +310,24 @@ export default function StudentProfilePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vouchers.map((v) => (
-                    <TableRow key={v.id}>
-                      <TableCell className="font-medium">{formatPKR(v.amount)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{formatDate(v.due_date)}</TableCell>
-                      <TableCell>
-                        <Badge className={
-                          v.status === "paid" ? "bg-green-100 text-green-700 hover:bg-green-100" :
-                          v.status === "overdue" ? "bg-red-100 text-red-700 hover:bg-red-100" :
-                          "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                        }>
-                          {v.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {vouchers.map((v) => {
+                    const effStatus = v.status === "paid" ? "paid" : new Date(v.due_date) < new Date(new Date().toDateString()) ? "overdue" : "pending";
+                    return (
+                      <TableRow key={v.id}>
+                        <TableCell className="font-medium">{formatPKR(v.amount)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{formatDate(v.due_date)}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            effStatus === "paid" ? "bg-green-100 text-green-700 hover:bg-green-100" :
+                            effStatus === "overdue" ? "bg-red-100 text-red-700 hover:bg-red-100" :
+                            "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                          }>
+                            {effStatus}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -344,27 +347,33 @@ export default function StudentProfilePage() {
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead>Exam</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Subject</TableHead>
                     <TableHead>Marks</TableHead>
-                    <TableHead>Remarks</TableHead>
+                    <TableHead className="hidden sm:table-cell">Remarks</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {results.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.exam?.name ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{r.exam ? formatDate(r.exam.date) : "—"}</TableCell>
-                      <TableCell>
-                        {r.marks_obtained}/{r.exam?.total_marks ?? "?"}
-                        {r.exam && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({Math.round((r.marks_obtained / r.exam.total_marks) * 100)}%)
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{r.remarks ?? "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                  {results.map((r) => {
+                    const pct = r.exam ? Math.round((r.marks_obtained / r.exam.total_marks) * 100) : null;
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell>
+                          <p className="font-medium text-sm">{r.exam?.name ?? "—"}</p>
+                          {r.exam && <p className="text-xs text-muted-foreground">{formatDate(r.exam.date)}</p>}
+                        </TableCell>
+                        <TableCell className="text-sm">{r.subjects?.name ?? "—"}</TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium">{r.marks_obtained}/{r.exam?.total_marks ?? "?"}</span>
+                          {pct !== null && (
+                            <span className={`text-xs ml-1 ${pct >= 80 ? "text-green-600" : pct >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                              ({pct}%)
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{r.remarks ?? "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -373,7 +382,7 @@ export default function StudentProfilePage() {
       </Tabs>
 
       {/* Edit Dialog */}
-      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+      <Dialog open={showEdit} modal={false} onOpenChange={setShowEdit}>
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Student</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">

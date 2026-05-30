@@ -150,7 +150,7 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      <Dialog open={showCreate} onOpenChange={(o) => { setShowCreate(o); if (!o) resetDialog(); }}>
+      <Dialog open={showCreate} modal={false} onOpenChange={(o) => { setShowCreate(o); if (!o) resetDialog(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>New Announcement</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
