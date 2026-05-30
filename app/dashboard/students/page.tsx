@@ -126,7 +126,7 @@ export default function StudentsPage() {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("students").insert({
+    const { data: newStudent, error } = await (supabase as any).from("students").insert({
       school_id: schoolId,
       name: form.name.trim(),
       father_name: form.father_name.trim() || null,
@@ -138,11 +138,20 @@ export default function StudentsPage() {
       address: form.address.trim() || null,
       status: form.status,
       photo_url: photoUrl,
-    });
+    }).select("id").single();
 
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Student added!");
+
+    // Fire-and-forget welcome WhatsApp to parent
+    if (newStudent?.id) {
+      fetch("/api/students/welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: newStudent.id }),
+      }).catch(() => {});
+    }
     setShowAdd(false);
     setStep(1);
     setForm(EMPTY_FORM);

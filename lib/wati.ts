@@ -203,6 +203,25 @@ export function sendDailySummary(
   );
 }
 
+// Sent once when a student is first enrolled (onboarding or manual add)
+// Template params: [studentName, className, schoolName]
+export function sendEnrollmentWelcome(
+  parentPhone: string,
+  studentName: string,
+  className: string,
+  schoolName: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_enrollment_welcome",
+    [studentName, className, schoolName],
+    endpoint,
+    token
+  );
+}
+
 export function sendMonthlyReport(
   parentPhone: string,
   studentName: string,
