@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const publicRoutes = ["/auth/login", "/auth/verify"];
+  const publicRoutes = ["/auth/login", "/auth/register"];
   const isPublic =
     publicRoutes.includes(pathname) ||
     pathname.startsWith("/pay/") ||
