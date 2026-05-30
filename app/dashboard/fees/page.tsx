@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, CreditCard, Receipt, CheckCircle2, Send } from "lucide-react";
+import { Plus, CreditCard, Receipt, CheckCircle2, Printer } from "lucide-react";
 import type { Class, FeeType, FeeVoucherStatus } from "@/types/database";
 
 type VoucherRow = {
@@ -284,7 +284,7 @@ export default function FeesPage() {
                     <TableHead>Amount</TableHead>
                     <TableHead className="hidden md:table-cell">Due Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-24"></TableHead>
+                    <TableHead className="w-32"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -303,16 +303,26 @@ export default function FeesPage() {
                         </TableCell>
                         <TableCell><StatusBadge status={eff} /></TableCell>
                         <TableCell>
-                          {eff !== "paid" && (
+                          <div className="flex gap-1.5">
+                            {eff !== "paid" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => handleMarkPaid(v.id)}
+                              >
+                                <CheckCircle2 size={12} className="mr-1" /> Paid
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
                               className="h-7 text-xs"
-                              onClick={() => handleMarkPaid(v.id)}
+                              onClick={() => window.open(`/dashboard/fees/print/${v.id}`, "_blank")}
                             >
-                              <CheckCircle2 size={12} className="mr-1" /> Paid
+                              <Printer size={12} />
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
