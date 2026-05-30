@@ -107,6 +107,7 @@ export default function AttendancePage() {
         date: selectedDate,
         records: students.map((s) => ({
           studentId: s.id,
+          studentName: s.name,
           status: attendance[s.id],
           parentPhone: s.parent_phone,
         })),

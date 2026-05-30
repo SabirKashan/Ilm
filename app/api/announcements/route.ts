@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
+import { sendAnnouncement } from "@/lib/wati";
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -67,20 +68,51 @@ export async function POST(req: NextRequest) {
   if (target === "class") studentsQuery = studentsQuery.eq("class_id", classId);
 
   const { data: students } = await studentsQuery;
-
-  // Deduplicate phones (one parent may have multiple children)
   const phones = [...new Set((students ?? []).map((s: any) => s.parent_phone as string).filter(Boolean))];
 
-  if (phones.length > 0) {
-    const logs = phones.map((phone) => ({
-      school_id: profile.school_id,
-      phone,
-      template_name: "announcement",
-      status: "queued",
-    }));
-    await admin.from("whatsapp_logs").insert(logs);
-    // TODO: call WATI broadcast API here when integrated
+  if (phones.length === 0) {
+    return NextResponse.json({ success: true, announcementId: ann?.id, recipientCount: 0 });
   }
 
-  return NextResponse.json({ success: true, announcementId: ann?.id, recipientCount: phones.length });
+  // Get school WATI credentials
+  const { data: school } = await admin
+    .from("schools")
+    .select("wati_endpoint, wati_token")
+    .eq("id", profile.school_id)
+    .single() as { data: { wati_endpoint: string | null; wati_token: string | null } | null; error: unknown };
+
+  const watiEndpoint = school?.wati_endpoint;
+  const watiToken = school?.wati_token;
+  const watiEnabled = !!(watiEndpoint && watiToken);
+
+  // Send to all parent phones
+  let sentCount = 0;
+  await Promise.allSettled(
+    phones.map(async (phone) => {
+      const result = watiEnabled
+        ? await sendAnnouncement(phone, title.trim(), message.trim(), watiEndpoint!, watiToken!)
+        : { success: false };
+
+      await admin.from("whatsapp_logs").insert({
+        school_id: profile.school_id,
+        phone,
+        template_name: "ilm_announcement",
+        status: watiEnabled ? (result.success ? "sent" : "failed") : "queued",
+      });
+
+      if (result.success) sentCount++;
+    })
+  );
+
+  // Mark announcement as sent if at least one message went through
+  if (watiEnabled && sentCount > 0) {
+    await admin.from("announcements").update({ whatsapp_sent: true }).eq("id", ann?.id);
+  }
+
+  return NextResponse.json({
+    success: true,
+    announcementId: ann?.id,
+    recipientCount: phones.length,
+    sentCount: watiEnabled ? sentCount : 0,
+  });
 }

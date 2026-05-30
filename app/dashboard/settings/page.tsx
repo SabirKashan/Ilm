@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { School } from "@/types/database";
 
-type SchoolForm = Pick<School, "name" | "address" | "city" | "phone" | "jazzcash_merchant_id" | "easypaisa_merchant_id">;
+type SchoolForm = Pick<School, "name" | "address" | "city" | "phone" | "jazzcash_merchant_id" | "easypaisa_merchant_id" | "wati_endpoint" | "wati_token">;
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -24,6 +24,8 @@ export default function SettingsPage() {
     phone: "",
     jazzcash_merchant_id: "",
     easypaisa_merchant_id: "",
+    wati_endpoint: "",
+    wati_token: "",
   });
 
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function SettingsPage() {
           phone: s.phone ?? "",
           jazzcash_merchant_id: s.jazzcash_merchant_id ?? "",
           easypaisa_merchant_id: s.easypaisa_merchant_id ?? "",
+          wati_endpoint: s.wati_endpoint ?? "",
+          wati_token: s.wati_token ?? "",
         });
       }
       setLoading(false);
@@ -71,6 +75,8 @@ export default function SettingsPage() {
         phone: form.phone?.trim() || null,
         jazzcash_merchant_id: form.jazzcash_merchant_id?.trim() || null,
         easypaisa_merchant_id: form.easypaisa_merchant_id?.trim() || null,
+        wati_endpoint: form.wati_endpoint?.trim() || null,
+        wati_token: form.wati_token?.trim() || null,
       })
       .eq("id", schoolId);
     setSaving(false);
@@ -131,20 +137,32 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* WhatsApp placeholder */}
+      {/* WhatsApp / WATI */}
       <section className="space-y-4">
         <h2 className="text-base font-semibold text-gray-900 border-b pb-2">WhatsApp (WATI)</h2>
         <p className="text-xs text-muted-foreground">
-          WATI integration coming soon. Attendance alerts, fee reminders, and announcements will be delivered via WhatsApp once configured.
+          Enter your WATI API credentials to enable WhatsApp alerts for attendance, announcements, and fee reminders.
+          Find these in your WATI dashboard under <strong>Account &rarr; API</strong>.
         </p>
         <div className="space-y-2">
-          <Label className="text-muted-foreground">WATI API Endpoint</Label>
-          <Input placeholder="https://..." disabled className="opacity-50" />
+          <Label>API Endpoint</Label>
+          <Input placeholder="https://live-mt-server.wati.io/XXXXX" {...field("wati_endpoint")} />
+          <p className="text-xs text-muted-foreground">Looks like: https://live-mt-server.wati.io/12345</p>
         </div>
         <div className="space-y-2">
-          <Label className="text-muted-foreground">WATI API Token</Label>
-          <Input placeholder="Coming soon" disabled className="opacity-50" />
+          <Label>API Token</Label>
+          <Input
+            type="password"
+            placeholder="eyJhbGci..."
+            value={form.wati_token ?? ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setForm((prev) => ({ ...prev, wati_token: e.target.value }))
+            }
+          />
         </div>
+        {form.wati_endpoint && form.wati_token && (
+          <p className="text-xs text-green-600 font-medium">WATI credentials saved — WhatsApp notifications are active.</p>
+        )}
       </section>
 
       <Button

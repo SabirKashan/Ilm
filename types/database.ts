@@ -15,6 +15,8 @@ export interface School {
   logo_url: string | null;
   jazzcash_merchant_id: string | null;
   easypaisa_merchant_id: string | null;
+  wati_endpoint: string | null;
+  wati_token: string | null;
   onboarding_complete: boolean;
   created_at: string;
 }

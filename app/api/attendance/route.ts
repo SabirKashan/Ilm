@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
+import { sendAbsentAlert, sendLateAlert } from "@/lib/wati";
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -33,7 +34,8 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const rows = (records as { studentId: string; status: string; parentPhone: string }[]).map((r) => ({
+  // Upsert attendance records
+  const rows = (records as { studentId: string; studentName: string; status: string; parentPhone: string }[]).map((r) => ({
     school_id: profile.school_id,
     student_id: r.studentId,
     class_id: classId,
@@ -49,18 +51,63 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Log WhatsApp notifications for absent/late students (WATI integration pending)
-  const notifiable = (records as { studentId: string; status: string; parentPhone: string }[]).filter(
+  // Get school WATI credentials
+  const { data: school } = await admin
+    .from("schools")
+    .select("wati_endpoint, wati_token")
+    .eq("id", profile.school_id)
+    .single() as { data: { wati_endpoint: string | null; wati_token: string | null } | null; error: unknown };
+
+  const watiEndpoint = school?.wati_endpoint;
+  const watiToken = school?.wati_token;
+  const watiEnabled = !!(watiEndpoint && watiToken);
+
+  // Send WhatsApp alerts for absent/late students
+  const notifiable = (records as { studentId: string; studentName: string; status: string; parentPhone: string }[]).filter(
     (r) => r.status !== "present"
   );
+
   if (notifiable.length > 0) {
-    const logs = notifiable.map((r) => ({
-      school_id: profile.school_id,
-      phone: r.parentPhone,
-      template_name: r.status === "absent" ? "attendance_absent" : "attendance_late",
-      status: "queued",
-    }));
-    await admin.from("whatsapp_logs").insert(logs);
+    const formattedDate = new Date(date).toLocaleDateString("en-PK", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+
+    const results = await Promise.allSettled(
+      notifiable.map(async (r) => {
+        const logStatus = watiEnabled
+          ? (r.status === "absent"
+              ? await sendAbsentAlert(r.parentPhone, r.studentName, formattedDate, watiEndpoint!, watiToken!)
+              : await sendLateAlert(r.parentPhone, r.studentName, formattedDate, watiEndpoint!, watiToken!))
+          : { success: false };
+
+        await admin.from("whatsapp_logs").insert({
+          school_id: profile.school_id,
+          phone: r.parentPhone,
+          template_name: r.status === "absent" ? "ilm_attendance_absent" : "ilm_attendance_late",
+          status: watiEnabled ? (logStatus.success ? "sent" : "failed") : "queued",
+        });
+
+        return logStatus;
+      })
+    );
+
+    // Mark attendance rows whatsapp_sent=true for successful sends
+    if (watiEnabled) {
+      const sentIds = notifiable
+        .filter((_, i) => {
+          const r = results[i];
+          return r.status === "fulfilled" && r.value.success;
+        })
+        .map((r) => r.studentId);
+
+      if (sentIds.length > 0) {
+        await admin
+          .from("attendance")
+          .update({ whatsapp_sent: true })
+          .in("student_id", sentIds)
+          .eq("date", date);
+      }
+    }
   }
 
   return NextResponse.json({ success: true });
