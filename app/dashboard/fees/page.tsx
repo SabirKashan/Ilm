@@ -371,7 +371,7 @@ export default function FeesPage() {
       )}
 
       {/* ── ADD FEE TYPE DIALOG ── */}
-      <Dialog open={showAddType} onOpenChange={(o) => { setShowAddType(o); if (!o) { setTypeName(""); setTypeAmount(""); setTypeFreq("monthly"); } }}>
+      <Dialog open={showAddType} modal={false} onOpenChange={(o) => { setShowAddType(o); if (!o) { setTypeName(""); setTypeAmount(""); setTypeFreq("monthly"); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Add Fee Type</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
@@ -409,13 +409,24 @@ export default function FeesPage() {
       </Dialog>
 
       {/* ── GENERATE VOUCHERS DIALOG ── */}
-      <Dialog open={showGenerate} onOpenChange={(o) => {
+      <Dialog open={showGenerate} modal={false} onOpenChange={(o) => {
         setShowGenerate(o);
         if (!o) { setGenClassId(""); setGenFeeTypeId(""); setGenDueDate(""); setGenStudents([]); }
       }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Generate Vouchers</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
+            {feeTypes.length === 0 ? (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+                No fee types yet.{" "}
+                <button
+                  className="underline font-medium"
+                  onClick={() => { setShowGenerate(false); setActiveTab("fee-types"); setTimeout(() => setShowAddType(true), 100); }}
+                >
+                  Add a fee type first
+                </button>
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label>Fee Type *</Label>
               <Select value={genFeeTypeId} onValueChange={(v) => setGenFeeTypeId(v ?? "")}>

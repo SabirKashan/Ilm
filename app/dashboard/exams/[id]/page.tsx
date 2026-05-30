@@ -152,7 +152,7 @@ export default function ExamDetailPage() {
   const filledCount = students.filter((s) => results[s.id]?.marks !== "").length;
   const avgMarks = filledCount > 0
     ? (students.filter((s) => results[s.id]?.marks !== "")
-        .reduce((sum, s) => sum + parseFloat(results[s.id].marks || "0"), 0) / filledCount)
+        .reduce((sum, s) => sum + parseFloat(results[s.id]?.marks || "0"), 0) / filledCount)
     : null;
 
   if (loadingExam) {
