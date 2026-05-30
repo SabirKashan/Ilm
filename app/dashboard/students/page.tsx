@@ -28,6 +28,7 @@ export default function StudentsPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [schoolId, setSchoolId] = useState<string | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +57,10 @@ export default function StudentsPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: profile } = await supabase.from("users").select("school_id").eq("id", user!.id).single() as { data: { school_id: string } | null; error: unknown };
+    if (profile?.school_id) setSchoolId(profile.school_id);
+
     const [{ data: studentRows }, { data: classRows }] = await Promise.all([
       supabase.from("students").select("*").order("name"),
       supabase.from("classes").select("*").order("grade_level"),
@@ -102,26 +107,24 @@ export default function StudentsPage() {
   async function handleAddStudent() {
     const phone = formatPakistaniPhone(form.parent_phone);
     if (!phone) { toast.error("Invalid phone number. Enter a valid Pakistani number."); return; }
+    if (!schoolId) { toast.error("School not found"); return; }
 
     setSaving(true);
     let photoUrl: string | null = null;
 
     if (photoFile) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from("users").select("school_id").eq("id", user!.id).single() as { data: { school_id: string } | null; error: unknown };
-      if (profile?.school_id) {
-        const ext = photoFile.name.split(".").pop();
-        const path = `${profile.school_id}/students/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("ilm-assets").upload(path, photoFile, { upsert: true });
-        if (!upErr) {
-          const { data: urlData } = supabase.storage.from("ilm-assets").getPublicUrl(path);
-          photoUrl = urlData.publicUrl;
-        }
+      const ext = photoFile.name.split(".").pop();
+      const path = `${schoolId}/students/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("ilm-assets").upload(path, photoFile, { upsert: true });
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("ilm-assets").getPublicUrl(path);
+        photoUrl = urlData.publicUrl;
       }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("students").insert({
+      school_id: schoolId,
       name: form.name.trim(),
       father_name: form.father_name.trim() || null,
       gender: form.gender || null,
@@ -196,6 +199,7 @@ export default function StudentsPage() {
       const cls = classes.find((c) => c.name.toLowerCase() === row.class_name?.toLowerCase().trim());
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from("students").insert({
+        school_id: schoolId,
         name: row.name.trim(),
         father_name: row.father_name?.trim() || null,
         date_of_birth: row.date_of_birth?.trim() || null,

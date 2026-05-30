@@ -29,6 +29,7 @@ export default function ClassesPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [schoolId, setSchoolId] = useState<string | null>(null);
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [teachers, setTeachers] = useState<Pick<DbUser, "id" | "name">[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,10 @@ export default function ClassesPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: profile } = await supabase.from("users").select("school_id").eq("id", user!.id).single() as { data: { school_id: string } | null; error: unknown };
+    if (profile?.school_id) setSchoolId(profile.school_id);
+
     const [{ data: classRows }, { data: teacherRows }, { data: studentRows }] = await Promise.all([
       supabase.from("classes").select("*").order("grade_level"),
       supabase.from("users").select("id, name").eq("role", "teacher").order("name"),
@@ -69,9 +74,11 @@ export default function ClassesPage() {
 
   async function handleAddClass() {
     if (!form.name.trim()) { toast.error("Class name is required"); return; }
+    if (!schoolId) { toast.error("School not found"); return; }
     setSaving(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("classes").insert({
+      school_id: schoolId,
       name: form.name.trim(),
       grade_level: form.grade_level || null,
       teacher_id: form.teacher_id || null,
