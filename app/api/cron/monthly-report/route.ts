@@ -5,9 +5,10 @@ import { sendMonthlyReport } from "@/lib/wati";
 // Runs on the 1st of every month at 9:00 AM PKT (04:00 UTC)
 // Sends each parent a WhatsApp progress summary for the previous month:
 //   attendance %, last exam grade, and fee status
+// Uses bulk queries per school (not per student) to avoid N+1 timeouts.
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
   let sent = 0;
 
   for (const school of schools as any[]) {
-    // Get all active students in this school
+    // ── 1. Get all active students ──────────────────────────────────────────
     const { data: students } = await supabase
       .from("students")
       .select("id, name, parent_phone")
@@ -41,48 +42,76 @@ export async function GET(req: NextRequest) {
 
     if (!students || students.length === 0) continue;
 
+    const studentIds = (students as any[]).map((s) => s.id);
+
+    // ── 2. Bulk-fetch attendance for ALL students in this school ────────────
+    const { data: allAtt } = await supabase
+      .from("attendance")
+      .select("student_id, status")
+      .in("student_id", studentIds)
+      .gte("date", monthStart)
+      .lte("date", monthEnd);
+
+    // Group by student_id
+    const attByStudent: Record<string, { status: string }[]> = {};
+    for (const r of (allAtt ?? []) as any[]) {
+      if (!attByStudent[r.student_id]) attByStudent[r.student_id] = [];
+      attByStudent[r.student_id].push({ status: r.status });
+    }
+
+    // ── 3. Bulk-fetch latest result per student ─────────────────────────────
+    // Use a subquery approach: fetch all results ordered desc, take distinct first per student in JS
+    const { data: allResults } = await supabase
+      .from("results")
+      .select("student_id, marks_obtained, exams(total_marks, name)")
+      .in("student_id", studentIds)
+      .order("id", { ascending: false });
+
+    // First result per student = latest
+    const latestResultByStudent: Record<string, any> = {};
+    for (const r of (allResults ?? []) as any[]) {
+      if (!latestResultByStudent[r.student_id]) {
+        latestResultByStudent[r.student_id] = r;
+      }
+    }
+
+    // ── 4. Bulk-fetch pending fee vouchers for ALL students ─────────────────
+    const { data: allVouchers } = await supabase
+      .from("fee_vouchers")
+      .select("student_id, status")
+      .in("student_id", studentIds)
+      .in("status", ["pending", "overdue"]);
+
+    // Count pending per student
+    const pendingByStudent: Record<string, number> = {};
+    for (const v of (allVouchers ?? []) as any[]) {
+      pendingByStudent[v.student_id] = (pendingByStudent[v.student_id] ?? 0) + 1;
+    }
+
+    // ── 5. Build per-student message and send ──────────────────────────────
+    const logRows: any[] = [];
+
     for (const student of students as any[]) {
       if (!student.parent_phone) continue;
 
-      // Attendance % for previous month
-      const { data: att } = await supabase
-        .from("attendance")
-        .select("status")
-        .eq("student_id", student.id)
-        .gte("date", monthStart)
-        .lte("date", monthEnd);
-
-      const attRecords = (att ?? []) as { status: string }[];
+      // Attendance %
+      const attRecords = attByStudent[student.id] ?? [];
       const totalDays = attRecords.length;
       const presentDays = attRecords.filter((r) => r.status === "present").length;
       const attPct = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
-      // Last exam grade
-      const { data: latestResult } = await supabase
-        .from("results")
-        .select("marks_obtained, exams(total_marks, name)")
-        .eq("student_id", student.id)
-        .order("id", { ascending: false })
-        .limit(1)
-        .single() as { data: any; error: unknown };
-
+      // Grade
       let gradeLabel = "N/A";
-      if (latestResult) {
-        const pct = latestResult.exams?.total_marks > 0
-          ? Math.round((latestResult.marks_obtained / latestResult.exams.total_marks) * 100)
-          : 0;
+      const latestResult = latestResultByStudent[student.id];
+      if (latestResult && latestResult.exams?.total_marks > 0) {
+        const pct = Math.round((latestResult.marks_obtained / latestResult.exams.total_marks) * 100);
         gradeLabel = getGrade(pct);
       }
 
       // Fee status
-      const { count: pendingCount } = await supabase
-        .from("fee_vouchers")
-        .select("id", { count: "exact", head: true })
-        .eq("student_id", student.id)
-        .in("status", ["pending", "overdue"]);
-
-      const feeStatus = (pendingCount ?? 0) > 0
-        ? `${pendingCount} voucher${pendingCount! > 1 ? "s" : ""} pending`
+      const pendingCount = pendingByStudent[student.id] ?? 0;
+      const feeStatus = pendingCount > 0
+        ? `${pendingCount} voucher${pendingCount > 1 ? "s" : ""} pending`
         : "All clear";
 
       const result = await sendMonthlyReport(
@@ -97,15 +126,19 @@ export async function GET(req: NextRequest) {
         school.wati_token
       );
 
-      if (result.success) {
-        await supabase.from("whatsapp_logs").insert({
-          school_id: school.id,
-          phone: student.parent_phone,
-          template_name: "ilm_monthly_report",
-          status: "sent",
-        });
-        sent++;
-      }
+      logRows.push({
+        school_id: school.id,
+        phone: student.parent_phone,
+        template_name: "ilm_monthly_report",
+        status: result.success ? "sent" : "failed",
+      });
+
+      if (result.success) sent++;
+    }
+
+    // Bulk-insert all log rows for this school
+    if (logRows.length > 0) {
+      await supabase.from("whatsapp_logs").insert(logRows);
     }
   }
 

@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, CreditCard, Receipt, CheckCircle2, Printer, Share2 } from "lucide-react";
+import { Plus, CreditCard, Receipt, CheckCircle2, Printer, Share2, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 25;
 import type { Class, FeeType, FeeVoucherStatus } from "@/types/database";
 
 type VoucherRow = {
@@ -58,6 +60,7 @@ export default function FeesPage() {
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [filterClassId, setFilterClassId] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [page, setPage] = useState(1);
 
   // Add Fee Type dialog
   const [showAddType, setShowAddType] = useState(false);
@@ -190,6 +193,10 @@ export default function FeesPage() {
     return classMatch && statusMatch;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredVouchers.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedVouchers = filteredVouchers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const pendingTotal = vouchers.filter((v) => effectiveStatus(v) !== "paid").reduce((s, v) => s + v.amount, 0);
   const collectedTotal = vouchers.filter((v) => v.status === "paid").reduce((s, v) => s + v.amount, 0);
 
@@ -236,7 +243,7 @@ export default function FeesPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <div className="flex gap-2 flex-wrap">
-              <Select value={filterClassId} onValueChange={(v) => setFilterClassId(v ?? "all")}>
+              <Select value={filterClassId} onValueChange={(v) => { setFilterClassId(v ?? "all"); setPage(1); }}>
                 <SelectTrigger className="w-40 h-9">
                   <SelectValue placeholder="All classes" />
                 </SelectTrigger>
@@ -245,7 +252,7 @@ export default function FeesPage() {
                   {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "all")}>
+              <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v ?? "all"); setPage(1); }}>
                 <SelectTrigger className="w-36 h-9">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
@@ -275,6 +282,7 @@ export default function FeesPage() {
               </p>
             </div>
           ) : (
+            <>
             <div className="border rounded-xl overflow-hidden bg-white">
               <Table>
                 <TableHeader>
@@ -289,7 +297,7 @@ export default function FeesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredVouchers.map((v) => {
+                  {pagedVouchers.map((v) => {
                     const eff = effectiveStatus(v);
                     return (
                       <TableRow key={v.id}>
@@ -344,6 +352,23 @@ export default function FeesPage() {
                 </TableBody>
               </Table>
             </div>
+            {/* Pagination */}
+            {filteredVouchers.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredVouchers.length)} of {filteredVouchers.length}
+                </span>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1}>
+                    <ChevronLeft size={14} />
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}>
+                    <ChevronRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </div>
       )}

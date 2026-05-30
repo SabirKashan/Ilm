@@ -13,7 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Search, Upload, Users, ChevronRight, Download } from "lucide-react";
+import { Plus, Search, Upload, Users, ChevronRight, ChevronLeft, Download } from "lucide-react";
+
+const PAGE_SIZE = 25;
 import type { Student, Class } from "@/types/database";
 import { formatPakistaniPhone, displayPakistaniPhone } from "@/lib/utils";
 
@@ -37,6 +39,7 @@ export default function StudentsPage() {
   const [search, setSearch] = useState("");
   const [filterClass, setFilterClass] = useState("all");
   const [filterStatus, setFilterStatus] = useState("active");
+  const [page, setPage] = useState(1);
 
   // Add student dialog
   const [showAdd, setShowAdd] = useState(false);
@@ -229,6 +232,10 @@ export default function StudentsPage() {
     }
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedStudents = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const classMap = Object.fromEntries(classes.map((c) => [c.id, c.name]));
 
   return (
@@ -257,17 +264,17 @@ export default function StudentsPage() {
             placeholder="Search by name, father, roll…"
             className="pl-8"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
-        <Select value={filterClass} onValueChange={(v) => setFilterClass(v ?? "all")}>
+        <Select value={filterClass} onValueChange={(v) => { setFilterClass(v ?? "all"); setPage(1); }}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="All classes" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All classes</SelectItem>
             {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "active")}>
+        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v ?? "active"); setPage(1); }}>
           <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="active">Active</SelectItem>
@@ -298,6 +305,7 @@ export default function StudentsPage() {
           )}
         </div>
       ) : (
+        <>
         <div className="border rounded-xl overflow-hidden bg-white">
           <Table>
             <TableHeader>
@@ -311,7 +319,7 @@ export default function StudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((s) => (
+              {pagedStudents.map((s) => (
                 <TableRow
                   key={s.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -354,6 +362,23 @@ export default function StudentsPage() {
             </TableBody>
           </Table>
         </div>
+        {/* Pagination */}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+            </span>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1}>
+                <ChevronLeft size={14} />
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}>
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Add Student Dialog */}

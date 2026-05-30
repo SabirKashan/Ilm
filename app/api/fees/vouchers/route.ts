@@ -87,6 +87,8 @@ export async function POST(req: NextRequest) {
   // Send WhatsApp to each parent
   let sentCount = 0;
   if (watiEnabled) {
+    const sentStudentIds: string[] = [];
+
     await Promise.allSettled(
       students.map(async (s) => {
         const result = await sendFeeVoucher(
@@ -106,13 +108,15 @@ export async function POST(req: NextRequest) {
           status: result.success ? "sent" : "failed",
         });
 
-        if (result.success) sentCount++;
+        if (result.success) {
+          sentStudentIds.push(s.id);
+          sentCount++;
+        }
       })
     );
 
-    // Mark vouchers whatsapp_sent for successful sends
-    if (sentCount > 0) {
-      const sentStudentIds = students.slice(0, sentCount).map((s) => s.id);
+    // Mark vouchers whatsapp_sent only for the students whose sends actually succeeded
+    if (sentStudentIds.length > 0) {
       await admin
         .from("fee_vouchers")
         .update({ whatsapp_sent: true })

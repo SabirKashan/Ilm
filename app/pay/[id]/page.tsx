@@ -239,6 +239,15 @@ export default function PayPage({ params }: { params: Promise<{ id: string }> })
             </div>
           )}
 
+          {/* Disclaimer */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 space-y-1">
+            <p className="font-semibold">⚠️ Important Notice</p>
+            <p>
+              This form only records your <strong>self-reported payment</strong>. It does not process or transfer any money.
+              Your school will verify the payment and update the status. Keep your transaction reference as proof.
+            </p>
+          </div>
+
           <Button
             type="submit"
             className="w-full bg-[#1B4332] hover:bg-[#2D6A4F] text-white py-5 text-base font-semibold"
@@ -248,7 +257,7 @@ export default function PayPage({ params }: { params: Promise<{ id: string }> })
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
-            By confirming, you declare that payment of Rs {Number(voucher.amount).toLocaleString()} has been made.
+            By confirming, you declare that payment of Rs {Number(voucher.amount).toLocaleString()} has been made to the school directly.
           </p>
         </form>
       </div>

@@ -6,7 +6,7 @@ import { sendBirthdayWish } from "@/lib/wati";
 // Sends a WhatsApp birthday wish to parents of students whose birthday is today
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day   = String(today.getDate()).padStart(2, "0");
-  // Match students born on today's month/day regardless of year
+  // LIKE on a date column is acceptable here — school databases are small (<1000 students)
+  // and this cron runs once per day. If scale demands it, add a generated birth_mmdd column.
   const pattern = `%-${month}-${day}`;
 
   const { data: students } = await supabase
