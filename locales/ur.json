@@ -1,0 +1,81 @@
+{
+  "app": {
+    "name": "علم",
+    "tagline": "آسان اسکول مینجمنٹ"
+  },
+  "auth": {
+    "login_title": "علم میں خوش آمدید",
+    "login_subtitle": "اپنے فون نمبر سے سائن ان کریں",
+    "phone_label": "فون نمبر",
+    "phone_placeholder": "03XX-XXXXXXX",
+    "send_otp": "OTP بھیجیں",
+    "sending": "بھیج رہے ہیں...",
+    "otp_title": "OTP درج کریں",
+    "otp_subtitle": "ہم نے {{phone}} پر 6 ہندسوں کا کوڈ بھیجا",
+    "otp_label": "تصدیقی کوڈ",
+    "verify": "تصدیق کریں",
+    "verifying": "تصدیق ہو رہی ہے...",
+    "resend_otp": "OTP دوبارہ بھیجیں",
+    "resend_in": "{{seconds}} سیکنڈ میں دوبارہ بھیجیں",
+    "invalid_phone": "براہ کرم درست پاکستانی فون نمبر درج کریں",
+    "otp_sent": "OTP کامیابی سے بھیجا گیا",
+    "invalid_otp": "غلط OTP۔ دوبارہ کوشش کریں۔"
+  },
+  "onboarding": {
+    "title": "اپنا اسکول ترتیب دیں",
+    "subtitle": "3 آسان مراحل میں اپنا اسکول تیار کریں",
+    "step1_title": "اسکول کا نام",
+    "step1_subtitle": "آپ کے اسکول کا نام کیا ہے؟",
+    "school_name": "اسکول کا نام",
+    "school_name_placeholder": "مثلاً النور پبلک اسکول",
+    "step2_title": "مقام",
+    "step2_subtitle": "آپ کا اسکول کہاں واقع ہے؟",
+    "address": "پتہ",
+    "address_placeholder": "گلی کا پتہ",
+    "city": "شہر",
+    "city_placeholder": "مثلاً لاہور",
+    "step3_title": "اسکول کا لوگو",
+    "step3_subtitle": "اپنا اسکول لوگو اپلوڈ کریں (اختیاری)",
+    "upload_logo": "لوگو اپلوڈ کریں",
+    "skip": "ابھی چھوڑیں",
+    "next": "آگے",
+    "back": "پیچھے",
+    "finish": "ترتیب مکمل کریں",
+    "setting_up": "ترتیب دے رہے ہیں..."
+  },
+  "nav": {
+    "overview": "خلاصہ",
+    "students": "طلباء",
+    "classes": "کلاسیں",
+    "attendance": "حاضری",
+    "fees": "فیس",
+    "exams": "امتحانات",
+    "payroll": "تنخواہیں",
+    "announcements": "اعلانات",
+    "settings": "ترتیبات"
+  },
+  "dashboard": {
+    "overview_title": "خلاصہ",
+    "total_students": "کل طلباء",
+    "total_teachers": "کل اساتذہ",
+    "fees_collected": "وصول شدہ فیس",
+    "this_month": "اس مہینے",
+    "outstanding_fees": "باقی فیس",
+    "pending_vouchers": "زیر التواء وائوچر",
+    "attendance_today": "آج کی حاضری",
+    "of_students": "طلباء کی"
+  },
+  "common": {
+    "loading": "لوڈ ہو رہا ہے...",
+    "error": "کچھ غلط ہوا",
+    "retry": "دوبارہ کوشش کریں",
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ کریں",
+    "delete": "حذف کریں",
+    "edit": "ترمیم",
+    "add": "شامل کریں",
+    "search": "تلاش کریں",
+    "no_data": "کوئی ڈیٹا نہیں ملا",
+    "pkr": "روپے"
+  }
+}
