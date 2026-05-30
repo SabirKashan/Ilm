@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import { PrintActions } from "../print-actions";
 
 async function getVoucherData(id: string) {
   const supabase = await createServerSupabaseClient();
@@ -90,26 +91,7 @@ export default async function VoucherPrintPage({ params }: { params: Promise<{ i
       <body>
         <div className="page">
           {/* Print button — hidden when printing */}
-          <div className="no-print" style={{ textAlign: "right", marginBottom: "12px" }}>
-            <button
-              onClick={() => window.print()}
-              style={{
-                background: "#1B4332", color: "white", border: "none", padding: "8px 20px",
-                borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: 600,
-              }}
-            >
-              🖨️ Print / Save as PDF
-            </button>
-            <button
-              onClick={() => window.close()}
-              style={{
-                marginLeft: "8px", background: "#eee", border: "none", padding: "8px 16px",
-                borderRadius: "6px", cursor: "pointer", fontSize: "14px",
-              }}
-            >
-              Close
-            </button>
-          </div>
+          <PrintActions />
 
           <div className="voucher">
             {/* Header */}
