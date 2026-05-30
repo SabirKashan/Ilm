@@ -1,10 +1,28 @@
 "use client";
 
-export function PrintActions() {
+import { useEffect } from "react";
+
+export function AutoPrint() {
+  useEffect(() => {
+    // Small delay so styles are painted before print dialog opens
+    const t = setTimeout(() => window.print(), 300);
+    return () => clearTimeout(t);
+  }, []);
+  return null;
+}
+
+export function PrintButtons() {
   return (
     <div
       className="no-print"
-      style={{ textAlign: "right", marginBottom: "12px" }}
+      style={{
+        position: "fixed",
+        top: 16,
+        right: 16,
+        display: "flex",
+        gap: 8,
+        zIndex: 9999,
+      }}
     >
       <button
         onClick={() => window.print()}
@@ -24,7 +42,6 @@ export function PrintActions() {
       <button
         onClick={() => window.close()}
         style={{
-          marginLeft: "8px",
           background: "#eee",
           border: "none",
           padding: "8px 16px",

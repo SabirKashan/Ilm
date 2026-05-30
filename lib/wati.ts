@@ -110,3 +110,115 @@ export function sendAnnouncement(
     token
   );
 }
+
+export function sendFeeReminder(
+  parentPhone: string,
+  studentName: string,
+  feeType: string,
+  amount: string,
+  dueDate: string,
+  daysLabel: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_fee_reminder",
+    [studentName, feeType, amount, dueDate, daysLabel],
+    endpoint,
+    token
+  );
+}
+
+export function sendOverdueNotice(
+  parentPhone: string,
+  studentName: string,
+  feeType: string,
+  amount: string,
+  daysOverdue: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_fee_overdue",
+    [studentName, feeType, amount, daysOverdue],
+    endpoint,
+    token
+  );
+}
+
+export function sendBirthdayWish(
+  parentPhone: string,
+  studentName: string,
+  schoolName: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_birthday",
+    [studentName, schoolName],
+    endpoint,
+    token
+  );
+}
+
+export function sendMeritCertificate(
+  parentPhone: string,
+  studentName: string,
+  examName: string,
+  percentage: string,
+  grade: string,
+  schoolName: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_merit_certificate",
+    [studentName, examName, percentage, grade, schoolName],
+    endpoint,
+    token
+  );
+}
+
+export function sendDailySummary(
+  adminPhone: string,
+  schoolName: string,
+  date: string,
+  present: string,
+  absent: string,
+  late: string,
+  outstanding: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    adminPhone,
+    "ilm_daily_summary",
+    [schoolName, date, present, absent, late, outstanding],
+    endpoint,
+    token
+  );
+}
+
+export function sendMonthlyReport(
+  parentPhone: string,
+  studentName: string,
+  month: string,
+  attendancePct: string,
+  lastGrade: string,
+  feeStatus: string,
+  schoolName: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_monthly_report",
+    [studentName, month, attendancePct, lastGrade, feeStatus, schoolName],
+    endpoint,
+    token
+  );
+}

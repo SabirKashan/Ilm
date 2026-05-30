@@ -105,7 +105,8 @@ export async function POST(req: NextRequest) {
           .from("attendance")
           .update({ whatsapp_sent: true })
           .in("student_id", sentIds)
-          .eq("date", date);
+          .eq("date", date)
+          .eq("school_id", profile.school_id);
       }
     }
   }

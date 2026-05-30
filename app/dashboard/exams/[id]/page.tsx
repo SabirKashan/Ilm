@@ -147,6 +147,15 @@ export default function ExamDetailPage() {
 
     toast.success(`Results saved for ${filled.length} student${filled.length !== 1 ? "s" : ""}`);
     loadResults();
+
+    // Send merit certificates to students who scored 90%+
+    fetch("/api/results/merit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ examId: exam.id, subjectId: selectedSubjectId }),
+    }).then((r) => r.json()).then((data) => {
+      if (data.sent > 0) toast.success(`${data.sent} merit certificate${data.sent > 1 ? "s" : ""} sent on WhatsApp`);
+    }).catch(() => {});
   }
 
   const filledCount = students.filter((s) => results[s.id]?.marks !== "").length;

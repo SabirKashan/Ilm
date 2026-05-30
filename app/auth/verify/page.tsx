@@ -82,8 +82,8 @@ function VerifyForm() {
 
     if (data.user) {
       const { data: profile } = await supabase
-        .from("users").select("role").eq("id", data.user.id).single() as
-        { data: { role: string } | null; error: unknown };
+        .from("users").select("role, school_id").eq("id", data.user.id).single() as
+        { data: { role: string; school_id: string } | null; error: unknown };
 
       if (!profile) {
         toast.error("Your account is not set up yet. Contact your school administrator.");
@@ -93,7 +93,18 @@ function VerifyForm() {
       }
 
       toast.success("Logged in successfully!");
-      router.replace(profile.role === "teacher" ? "/teacher" : "/dashboard");
+
+      if (profile.role === "teacher") {
+        router.replace("/teacher");
+        return;
+      }
+
+      // Check if admin's school has completed onboarding
+      const { data: school } = await supabase
+        .from("schools").select("onboarding_complete").eq("id", profile.school_id).single() as
+        { data: { onboarding_complete: boolean } | null; error: unknown };
+
+      router.replace(school?.onboarding_complete ? "/dashboard" : "/onboarding");
     }
   }
 

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, CreditCard, Receipt, CheckCircle2, Printer } from "lucide-react";
+import { Plus, CreditCard, Receipt, CheckCircle2, Printer, Share2 } from "lucide-react";
 import type { Class, FeeType, FeeVoucherStatus } from "@/types/database";
 
 type VoucherRow = {
@@ -34,7 +34,8 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 function effectiveStatus(v: VoucherRow): FeeVoucherStatus {
   if (v.status === "paid") return "paid";
-  if (new Date(v.due_date) < new Date(new Date().toDateString())) return "overdue";
+  const today = new Date().toISOString().split("T")[0];
+  if (v.due_date < today) return "overdue";
   return "pending";
 }
 
@@ -318,9 +319,22 @@ export default function FeesPage() {
                               size="sm"
                               variant="outline"
                               className="h-7 text-xs"
-                              onClick={() => window.open(`/dashboard/fees/print/${v.id}`, "_blank")}
+                              onClick={() => window.open(`/print/${v.id}`, "_blank")}
                             >
                               <Printer size={12} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              title="Copy payment link"
+                              onClick={() => {
+                                const url = `${window.location.origin}/pay/${v.id}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success("Payment link copied!");
+                              }}
+                            >
+                              <Share2 size={12} />
                             </Button>
                           </div>
                         </TableCell>

@@ -31,8 +31,12 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const publicRoutes = ["/auth/login", "/auth/verify"];
+  const isPublic =
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith("/pay/") ||
+    pathname.startsWith("/print/");
 
-  if (publicRoutes.includes(pathname)) {
+  if (isPublic) {
     if (user) {
       const { data: profile } = await supabase
         .from("users")

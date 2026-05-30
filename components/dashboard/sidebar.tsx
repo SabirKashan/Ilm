@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/components/lang-provider";
 import { toast } from "sonner";
 import {
   LayoutDashboard,
@@ -15,8 +16,10 @@ import {
   BookOpen,
   Banknote,
   Megaphone,
+  BarChart3,
   Settings,
   LogOut,
+  Languages,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -27,15 +30,17 @@ const NAV_ITEMS = [
   { href: "/dashboard/attendance",   label: "Attendance",    icon: CalendarCheck },
   { href: "/dashboard/fees",         label: "Fees",          icon: CreditCard },
   { href: "/dashboard/exams",        label: "Exams",         icon: BookOpen },
-  { href: "/dashboard/payroll",      label: "Payroll",       icon: Banknote },
-  { href: "/dashboard/announcements",label: "Announcements", icon: Megaphone },
-  { href: "/dashboard/settings",     label: "Settings",      icon: Settings },
+  { href: "/dashboard/payroll",      label: "Payroll",       icon: Banknote   },
+  { href: "/dashboard/announcements",label: "Announcements", icon: Megaphone  },
+  { href: "/dashboard/reports",      label: "Reports",       icon: BarChart3  },
+  { href: "/dashboard/settings",     label: "Settings",      icon: Settings   },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const { lang, toggle } = useLang();
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -78,8 +83,15 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="border-t border-white/10 p-4">
+      {/* Language + Logout */}
+      <div className="border-t border-white/10 p-4 space-y-1">
+        <button
+          onClick={toggle}
+          className="flex items-center gap-3 w-full px-2 py-2 text-sm text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+        >
+          <Languages size={18} />
+          {lang === "en" ? "اردو" : "English"}
+        </button>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 w-full px-2 py-2 text-sm text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors"

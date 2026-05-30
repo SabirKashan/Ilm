@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/birthdays",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/attendance-summary",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/fee-reminders",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 4 1 * *"
+    }
+  ]
+}

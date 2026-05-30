@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { LangProvider } from "@/components/lang-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -37,7 +38,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
-        {children}
+        <LangProvider>
+          {children}
+        </LangProvider>
         <Toaster richColors position="top-center" />
         <script
           dangerouslySetInnerHTML={{
