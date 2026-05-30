@@ -1,4 +1,5 @@
 import { Sidebar, BottomNav } from "@/components/dashboard/sidebar";
+import { InstallPrompt } from "@/components/install-prompt";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -21,6 +22,7 @@ export default async function DashboardLayout({
         </div>
       </main>
       <BottomNav />
+      <InstallPrompt />
     </div>
   );
 }
