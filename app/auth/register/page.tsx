@@ -35,39 +35,34 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    // 1. Create Supabase auth user
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    // Step 1: Create auth user + school + admin profile server-side
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), phone: formatted, password }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      toast.error(json.error ?? "Registration failed");
+      setLoading(false);
+      return;
+    }
+
+    // Step 2: Sign in to get a session (user is already created + confirmed)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       phone: formatted,
       password,
     });
 
-    if (signUpError) {
-      toast.error(
-        signUpError.message.includes("already registered")
-          ? "This phone number is already registered. Try signing in."
-          : signUpError.message
-      );
-      setLoading(false);
+    if (signInError) {
+      toast.error("Account created but sign-in failed — try logging in manually");
+      router.replace("/auth/login");
       return;
     }
 
-    if (!data.user) { toast.error("Sign up failed — please try again"); setLoading(false); return; }
-
-    // 2. Create school + admin profile via server route (needs service role)
-    const res = await fetch("/api/auth/setup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), phone: formatted }),
-    });
-
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      toast.error(json.error ?? "Account setup failed");
-      setLoading(false);
-      return;
-    }
-
-    toast.success("Account created!");
+    toast.success("Account created! Let's set up your school.");
     router.replace("/onboarding");
   }
 
@@ -76,7 +71,6 @@ export default function RegisterPage() {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div className="p-6 space-y-5">
 
-          {/* Header */}
           <div className="text-center">
             <div className="w-14 h-14 bg-[#1B4332] rounded-2xl flex items-center justify-center mx-auto mb-3">
               <span className="text-[#F59E0B] text-2xl font-bold">ع</span>
