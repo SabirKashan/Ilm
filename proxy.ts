@@ -34,7 +34,8 @@ export async function proxy(request: NextRequest) {
   const isPublic =
     publicRoutes.includes(pathname) ||
     pathname.startsWith("/pay/") ||
-    pathname.startsWith("/print/");
+    pathname.startsWith("/print/") ||
+    pathname.startsWith("/admin/");
 
   if (isPublic) {
     if (user) {

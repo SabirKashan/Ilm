@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Search, Upload, Users, ChevronRight, ChevronLeft, Download } from "lucide-react";
+import { Plus, Search, Upload, Users, ChevronRight, ChevronLeft, Download, Trash2 } from "lucide-react";
 
 const PAGE_SIZE = 25;
 import type { Student, Class } from "@/types/database";
@@ -42,6 +42,8 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
 
   // Add student dialog
+  const [deleteStudent, setDeleteStudent] = useState<Student | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -105,6 +107,17 @@ export default function StudentsPage() {
     if (!file) return;
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleDeleteStudent() {
+    if (!deleteStudent) return;
+    setDeleting(true);
+    const { error } = await supabase.from("students").delete().eq("id", deleteStudent.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${deleteStudent.name} deleted`);
+    setDeleteStudent(null);
+    setStudents((prev) => prev.filter((s) => s.id !== deleteStudent.id));
   }
 
   async function handleAddStudent() {
@@ -331,7 +344,7 @@ export default function StudentsPage() {
               {pagedStudents.map((s) => (
                 <TableRow
                   key={s.id}
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-gray-50 group"
                   onClick={() => router.push(`/dashboard/students/${s.id}`)}
                 >
                   <TableCell>
@@ -365,7 +378,19 @@ export default function StudentsPage() {
                       {s.status}
                     </Badge>
                   </TableCell>
-                  <TableCell><ChevronRight size={16} className="text-muted-foreground" /></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 justify-end">
+                      <ChevronRight size={16} className="text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => { e.stopPropagation(); setDeleteStudent(s); }}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -391,6 +416,24 @@ export default function StudentsPage() {
       )}
 
       {/* Add Student Dialog */}
+      {/* Delete Student Confirm */}
+      <Dialog open={!!deleteStudent} onOpenChange={(o) => { if (!o) setDeleteStudent(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Student</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete <strong>{deleteStudent?.name}</strong>? All their attendance, fee records, and results will also be permanently deleted. This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteStudent(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteStudent} disabled={deleting}>
+              {deleting ? "Deleting..." : "Yes, Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showAdd} modal={false} onOpenChange={(o) => { setShowAdd(o); if (!o) { setStep(1); setForm(EMPTY_FORM); setPhotoFile(null); setPhotoPreview(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>

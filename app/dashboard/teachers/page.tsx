@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, UserCog, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Plus, UserCog, Eye, EyeOff, KeyRound, Trash2 } from "lucide-react";
 import type { DbUser } from "@/types/database";
 import { displayPakistaniPhone } from "@/lib/utils";
 
@@ -22,6 +22,8 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [deleteTeacher, setDeleteTeacher] = useState<Teacher | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [resetTeacher, setResetTeacher] = useState<Teacher | null>(null);
   const [resetPw, setResetPw] = useState("");
   const [showResetPw, setShowResetPw] = useState(false);
@@ -44,6 +46,18 @@ export default function TeachersPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
+
+  async function handleDeleteTeacher() {
+    if (!deleteTeacher) return;
+    setDeleting(true);
+    const res = await fetch(`/api/teachers/${deleteTeacher.id}`, { method: "DELETE" });
+    const json = await res.json();
+    setDeleting(false);
+    if (!res.ok) { toast.error(json.error ?? "Failed to delete teacher"); return; }
+    toast.success(`${deleteTeacher.name} removed`);
+    setDeleteTeacher(null);
+    fetchTeachers();
+  }
 
   async function handleResetPassword() {
     if (!resetTeacher || !resetPw.trim()) return;
@@ -149,14 +163,16 @@ export default function TeachersPage() {
                     Logs in with phone + password
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-gray-900"
-                      onClick={() => { setResetTeacher(t); setResetPw(""); setShowResetPw(false); }}
-                    >
-                      <KeyRound size={14} className="mr-1" /> Reset Password
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-gray-900"
+                        onClick={() => { setResetTeacher(t); setResetPw(""); setShowResetPw(false); }}>
+                        <KeyRound size={14} className="mr-1" /> Reset Password
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => setDeleteTeacher(t)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -164,6 +180,24 @@ export default function TeachersPage() {
           </Table>
         </div>
       )}
+
+      {/* Delete Teacher Confirm */}
+      <Dialog open={!!deleteTeacher} onOpenChange={(o) => { if (!o) setDeleteTeacher(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove Teacher</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to remove <strong>{deleteTeacher?.name}</strong>? Their account will be permanently deleted. This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTeacher(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteTeacher} disabled={deleting}>
+              {deleting ? "Removing..." : "Yes, Remove"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset Password Dialog */}
       <Dialog open={!!resetTeacher} onOpenChange={(o) => { if (!o) { setResetTeacher(null); setResetPw(""); } }}>
