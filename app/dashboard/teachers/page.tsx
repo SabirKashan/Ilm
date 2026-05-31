@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, UserCog } from "lucide-react";
+import { Plus, UserCog, Eye, EyeOff } from "lucide-react";
 import type { DbUser } from "@/types/database";
 import { displayPakistaniPhone } from "@/lib/utils";
 
@@ -24,6 +24,8 @@ export default function TeachersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchTeachers = useCallback(async () => {
@@ -40,15 +42,15 @@ export default function TeachersPage() {
   useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
 
   async function handleAddTeacher() {
-    if (!name.trim() || !phone.trim()) {
-      toast.error("Name and phone number are required");
+    if (!name.trim() || !phone.trim() || !password.trim()) {
+      toast.error("Name, phone number, and password are required");
       return;
     }
     setSaving(true);
     const res = await fetch("/api/teachers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+      body: JSON.stringify({ name: name.trim(), phone: phone.trim(), password: password.trim() }),
     });
     const json = await res.json();
     setSaving(false);
@@ -62,6 +64,7 @@ export default function TeachersPage() {
     setShowAdd(false);
     setName("");
     setPhone("");
+    setPassword("");
     fetchTeachers();
   }
 
@@ -121,7 +124,7 @@ export default function TeachersPage() {
                     {displayPakistaniPhone(t.phone)}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
-                    They log in with OTP to this phone number
+                    Logs in with phone + password
                   </TableCell>
                 </TableRow>
               ))}
@@ -130,7 +133,7 @@ export default function TeachersPage() {
         </div>
       )}
 
-      <Dialog open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) { setName(""); setPhone(""); } }}>
+      <Dialog open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) { setName(""); setPhone(""); setPassword(""); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Add Teacher</DialogTitle>
@@ -153,8 +156,27 @@ export default function TeachersPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 inputMode="tel"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Password *</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Min. 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                They will log in using OTP sent to this number.
+                They will log in with this phone number and password.
               </p>
             </div>
           </div>
@@ -163,7 +185,7 @@ export default function TeachersPage() {
             <Button
               className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white"
               onClick={handleAddTeacher}
-              disabled={saving || !name.trim() || !phone.trim()}
+              disabled={saving || !name.trim() || !phone.trim() || !password.trim()}
             >
               {saving ? "Adding..." : "Add Teacher"}
             </Button>

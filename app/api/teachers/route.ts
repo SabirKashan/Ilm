@@ -32,9 +32,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { name, phone } = await req.json();
-  if (!name?.trim() || !phone?.trim()) {
-    return NextResponse.json({ error: "Name and phone are required" }, { status: 400 });
+  const { name, phone, password } = await req.json();
+  if (!name?.trim() || !phone?.trim() || !password?.trim()) {
+    return NextResponse.json({ error: "Name, phone, and password are required" }, { status: 400 });
+  }
+  if (password.trim().length < 6) {
+    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
   }
 
   const normalized = formatPakistaniPhone(phone);
@@ -48,9 +51,10 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Create auth user with phone (pre-confirmed so they can log in via OTP)
+  // Create auth user with phone + password (no OTP needed)
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     phone: normalized,
+    password: password.trim(),
     phone_confirm: true,
   });
 

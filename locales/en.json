@@ -46,12 +46,17 @@
   "nav": {
     "overview": "Overview",
     "students": "Students",
+    "promote": "Promote",
     "classes": "Classes",
+    "teachers": "Teachers",
     "attendance": "Attendance",
     "fees": "Fees",
     "exams": "Exams",
+    "timetable": "Timetable",
     "payroll": "Payroll",
     "announcements": "Announcements",
+    "reports": "Reports",
+    "activityLogs": "Activity Logs",
     "settings": "Settings"
   },
   "dashboard": {
@@ -66,6 +71,7 @@
     "of_students": "of students"
   },
   "common": {
+    "logout": "Sign out",
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Try again",

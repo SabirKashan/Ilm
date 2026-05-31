@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import i18n from "@/lib/i18n";
 
 type Lang = "en" | "ur";
 
@@ -16,6 +17,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     const saved = (localStorage.getItem("ilm_lang") ?? "en") as Lang;
     setLang(saved);
     applyLang(saved);
+    i18n.changeLanguage(saved);
   }, []);
 
   function toggle() {
@@ -23,6 +25,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     setLang(next);
     localStorage.setItem("ilm_lang", next);
     applyLang(next);
+    i18n.changeLanguage(next);
   }
 
   return (

@@ -46,12 +46,17 @@
   "nav": {
     "overview": "خلاصہ",
     "students": "طلباء",
+    "promote": "ترقی دیں",
     "classes": "کلاسیں",
+    "teachers": "اساتذہ",
     "attendance": "حاضری",
     "fees": "فیس",
     "exams": "امتحانات",
+    "timetable": "ٹائم ٹیبل",
     "payroll": "تنخواہیں",
     "announcements": "اعلانات",
+    "reports": "رپورٹس",
+    "activityLogs": "سرگرمی لاگ",
     "settings": "ترتیبات"
   },
   "dashboard": {
@@ -66,6 +71,7 @@
     "of_students": "طلباء کی"
   },
   "common": {
+    "logout": "سائن آؤٹ",
     "loading": "لوڈ ہو رہا ہے...",
     "error": "کچھ غلط ہوا",
     "retry": "دوبارہ کوشش کریں",
