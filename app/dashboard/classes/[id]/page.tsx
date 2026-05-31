@@ -41,6 +41,7 @@ export default function ClassDetailPage() {
   // Add subject
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [subjectName, setSubjectName] = useState("");
+  const [addToAllClasses, setAddToAllClasses] = useState(false);
   const [savingSubject, setSavingSubject] = useState(false);
 
   // Add student to class
@@ -93,18 +94,41 @@ export default function ClassDetailPage() {
   }
 
   async function handleAddSubject() {
-    if (!subjectName.trim()) return;
+    if (!subjectName.trim() || !schoolId) return;
     setSavingSubject(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("subjects").insert({
-      school_id: schoolId,
-      name: subjectName.trim(),
-      class_id: id,
-    });
-    setSavingSubject(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Subject added");
+
+    if (addToAllClasses) {
+      // Fetch all classes in the school
+      const { data: allClasses } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("school_id", schoolId) as { data: { id: string }[] | null; error: unknown };
+
+      const rows = (allClasses ?? []).map((c) => ({
+        school_id: schoolId,
+        name: subjectName.trim(),
+        class_id: c.id,
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("subjects").insert(rows);
+      setSavingSubject(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`"${subjectName.trim()}" added to all ${rows.length} classes`);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("subjects").insert({
+        school_id: schoolId,
+        name: subjectName.trim(),
+        class_id: id,
+      });
+      setSavingSubject(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Subject added");
+    }
+
     setSubjectName("");
+    setAddToAllClasses(false);
     setShowAddSubject(false);
     fetchData();
   }
@@ -401,18 +425,32 @@ export default function ClassDetailPage() {
       </Dialog>
 
       {/* Add Subject Dialog */}
-      <Dialog open={showAddSubject} onOpenChange={setShowAddSubject}>
+      <Dialog open={showAddSubject} onOpenChange={(o) => { setShowAddSubject(o); if (!o) { setSubjectName(""); setAddToAllClasses(false); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Add Subject</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label>Subject Name *</Label>
-            <Input
-              placeholder="e.g. Mathematics, Urdu, Science"
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter") handleAddSubject(); }}
-            />
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Subject Name *</Label>
+              <Input
+                placeholder="e.g. Mathematics, Urdu, Science"
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddSubject(); }}
+              />
+            </div>
+            <label className="flex items-center gap-3 p-3 bg-[#1B4332]/5 border border-[#1B4332]/20 rounded-lg cursor-pointer hover:bg-[#1B4332]/10 transition-colors">
+              <input
+                type="checkbox"
+                checked={addToAllClasses}
+                onChange={(e) => setAddToAllClasses(e.target.checked)}
+                className="w-4 h-4 accent-[#1B4332]"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Add to all classes</p>
+                <p className="text-xs text-muted-foreground">Creates this subject in every class in your school</p>
+              </div>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddSubject(false)}>Cancel</Button>
@@ -421,7 +459,7 @@ export default function ClassDetailPage() {
               onClick={handleAddSubject}
               disabled={savingSubject || !subjectName.trim()}
             >
-              {savingSubject ? "Adding..." : "Add"}
+              {savingSubject ? "Adding..." : addToAllClasses ? "Add to All Classes" : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>
