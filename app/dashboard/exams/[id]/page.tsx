@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, FileText } from "lucide-react";
+import Link from "next/link";
 
 type ExamDetail = {
   id: string;
@@ -214,6 +215,11 @@ export default function ExamDetailPage() {
               </Badge>
             )}
           </div>
+          <Link href={`/dashboard/exams/${id}/report-cards`}>
+            <Button variant="outline" className="gap-2">
+              <FileText size={15} /> Report Cards
+            </Button>
+          </Link>
         </div>
       </div>
 

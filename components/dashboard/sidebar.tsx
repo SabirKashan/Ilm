@@ -20,20 +20,26 @@ import {
   Settings,
   LogOut,
   Languages,
+  CalendarDays,
+  ClipboardList,
+  ArrowUpCircle,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard",              label: "Overview",      icon: LayoutDashboard },
-  { href: "/dashboard/students",     label: "Students",      icon: Users },
-  { href: "/dashboard/classes",      label: "Classes",       icon: GraduationCap },
-  { href: "/dashboard/teachers",     label: "Teachers",      icon: UserCog },
-  { href: "/dashboard/attendance",   label: "Attendance",    icon: CalendarCheck },
-  { href: "/dashboard/fees",         label: "Fees",          icon: CreditCard },
-  { href: "/dashboard/exams",        label: "Exams",         icon: BookOpen },
-  { href: "/dashboard/payroll",      label: "Payroll",       icon: Banknote   },
-  { href: "/dashboard/announcements",label: "Announcements", icon: Megaphone  },
-  { href: "/dashboard/reports",      label: "Reports",       icon: BarChart3  },
-  { href: "/dashboard/settings",     label: "Settings",      icon: Settings   },
+  { href: "/dashboard",                    label: "Overview",       icon: LayoutDashboard },
+  { href: "/dashboard/students",           label: "Students",       icon: Users },
+  { href: "/dashboard/students/promote",   label: "Promote",        icon: ArrowUpCircle },
+  { href: "/dashboard/classes",            label: "Classes",        icon: GraduationCap },
+  { href: "/dashboard/teachers",           label: "Teachers",       icon: UserCog },
+  { href: "/dashboard/attendance",         label: "Attendance",     icon: CalendarCheck },
+  { href: "/dashboard/fees",               label: "Fees",           icon: CreditCard },
+  { href: "/dashboard/exams",              label: "Exams",          icon: BookOpen },
+  { href: "/dashboard/timetable",          label: "Timetable",      icon: CalendarDays },
+  { href: "/dashboard/payroll",            label: "Payroll",        icon: Banknote   },
+  { href: "/dashboard/announcements",      label: "Announcements",  icon: Megaphone  },
+  { href: "/dashboard/reports",            label: "Reports",        icon: BarChart3  },
+  { href: "/dashboard/activity-logs",      label: "Activity Logs",  icon: ClipboardList },
+  { href: "/dashboard/settings",           label: "Settings",       icon: Settings   },
 ];
 
 export function Sidebar() {
