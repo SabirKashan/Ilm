@@ -96,7 +96,7 @@ export default async function ReportCardPrintPage({
             <div style={{ background: "#1B4332", color: "white", padding: "20px 28px", display: "flex", alignItems: "center", gap: 16, direction: "ltr" }}>
               {school?.logo_url
                 ? <img src={school.logo_url} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", background: "white", flexShrink: 0 }} />
-                : <div style={{ width: 56, height: 56, background: "#F59E0B", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: "bold", flexShrink: 0 }}>ع</div>
+                : <div style={{ width: 56, height: 56, background: "#F59E0B", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: "bold", flexShrink: 0 }}>R</div>
               }
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 20, fontWeight: "bold", fontFamily: "'Noto Nastaliq Urdu', Arial, sans-serif" }}>{school?.name ?? "School"}</div>

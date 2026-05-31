@@ -139,7 +139,7 @@ function IdCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", background: "white", flexShrink: 0 }} />
         ) : (
-          <div style={{ width: 32, height: 32, background: "#F59E0B", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: "bold", flexShrink: 0 }}>ع</div>
+          <div style={{ width: 32, height: 32, background: "#F59E0B", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: "bold", flexShrink: 0 }}>R</div>
         )}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: "bold", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolName}</div>

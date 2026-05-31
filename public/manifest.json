@@ -1,6 +1,6 @@
 {
-  "name": "Ilm — School Management",
-  "short_name": "Ilm",
+  "name": "MyRahbar — School Management",
+  "short_name": "MyRahbar",
   "description": "WhatsApp-first school management for Pakistani schools",
   "start_url": "/dashboard",
   "display": "standalone",

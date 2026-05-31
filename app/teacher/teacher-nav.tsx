@@ -30,9 +30,9 @@ export function TeacherNav({ teacherName }: { teacherName: string }) {
       {/* Top bar */}
       <header className="bg-[#1B4332] text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#F59E0B] rounded-lg flex items-center justify-center text-sm font-bold">ع</div>
+          <div className="w-8 h-8 bg-[#F59E0B] rounded-lg flex items-center justify-center text-sm font-bold">R</div>
           <div>
-            <div className="text-sm font-semibold leading-none">Ilm</div>
+            <div className="text-sm font-semibold leading-none">MyRahbar</div>
             <div className="text-xs text-white/60 leading-none mt-0.5">{teacherName}</div>
           </div>
         </div>

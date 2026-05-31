@@ -14,7 +14,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>("en");
 
   useEffect(() => {
-    const saved = (localStorage.getItem("ilm_lang") ?? "en") as Lang;
+    const saved = (localStorage.getItem("rahbar_lang") ?? "en") as Lang;
     setLang(saved);
     applyLang(saved);
     i18n.changeLanguage(saved);
@@ -23,7 +23,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   function toggle() {
     const next: Lang = lang === "en" ? "ur" : "en";
     setLang(next);
-    localStorage.setItem("ilm_lang", next);
+    localStorage.setItem("rahbar_lang", next);
     applyLang(next);
     i18n.changeLanguage(next);
   }

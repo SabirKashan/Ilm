@@ -67,7 +67,7 @@ export function Sidebar() {
         <div className="w-9 h-9 bg-[#F59E0B] rounded-lg flex items-center justify-center font-bold text-white text-lg">
           ع
         </div>
-        <span className="font-bold text-lg tracking-tight">Ilm</span>
+        <span className="font-bold text-lg tracking-tight">MyRahbar</span>
       </div>
 
       {/* Nav */}

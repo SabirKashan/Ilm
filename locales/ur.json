@@ -1,10 +1,10 @@
 {
   "app": {
-    "name": "علم",
+    "name": "مائی رہبر",
     "tagline": "آسان اسکول مینجمنٹ"
   },
   "auth": {
-    "login_title": "علم میں خوش آمدید",
+    "login_title": "مائی رہبر میں خوش آمدید",
     "login_subtitle": "اپنے فون نمبر سے سائن ان کریں",
     "phone_label": "فون نمبر",
     "phone_placeholder": "03XX-XXXXXXX",

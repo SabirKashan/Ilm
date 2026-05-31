@@ -10,13 +10,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ilm — School Management",
+  title: "MyRahbar — School Management",
   description: "WhatsApp-first school management for Pakistani schools",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ilm",
+    title: "MyRahbar",
   },
 };
 

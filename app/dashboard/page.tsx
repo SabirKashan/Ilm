@@ -249,7 +249,7 @@ async function OverviewStats() {
       {(totalStudents === 0) && (
         <div className="mt-8 rounded-xl border-2 border-dashed border-[#1B4332]/20 bg-[#1B4332]/5 p-8 text-center">
           <div className="text-4xl mb-3">🏫</div>
-          <h3 className="font-semibold text-gray-900 mb-1">Welcome to Ilm!</h3>
+          <h3 className="font-semibold text-gray-900 mb-1">Welcome to MyRahbar!</h3>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
             Start by adding your classes and students. Everything else — attendance,
             fees, results — flows from there.

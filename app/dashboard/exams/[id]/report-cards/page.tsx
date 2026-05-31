@@ -175,7 +175,7 @@ export default function ReportCardsPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={school.logo_url} alt="logo" className="w-12 h-12 rounded-lg object-contain bg-white p-1" />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-[#F59E0B] flex items-center justify-center font-bold text-xl">ع</div>
+                      <div className="w-12 h-12 rounded-lg bg-[#F59E0B] flex items-center justify-center font-bold text-xl">R</div>
                     )}
                     <div>
                       <p className="font-bold text-lg">{school?.name ?? "School"}</p>

@@ -1,10 +1,10 @@
 {
   "app": {
-    "name": "Ilm",
+    "name": "MyRahbar",
     "tagline": "School Management Made Simple"
   },
   "auth": {
-    "login_title": "Welcome to Ilm",
+    "login_title": "Welcome to MyRahbar",
     "login_subtitle": "Sign in with your phone number",
     "phone_label": "Phone Number",
     "phone_placeholder": "03XX-XXXXXXX",

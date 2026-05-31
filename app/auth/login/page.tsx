@@ -88,9 +88,9 @@ export default function LoginPage() {
           {/* Header */}
           <div className="text-center">
             <div className="w-14 h-14 bg-[#1B4332] rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-[#F59E0B] text-2xl font-bold">ع</span>
+              <span className="text-[#F59E0B] text-2xl font-bold">R</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Welcome to Ilm</h1>
+            <h1 className="text-xl font-bold text-gray-900">Welcome to MyRahbar</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Sign in to your school account</p>
           </div>
 

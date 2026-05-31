@@ -139,7 +139,7 @@ export default function PayPage({ params }: { params: Promise<{ id: string }> })
         {/* School header */}
         <div className="text-center">
           <div className="w-12 h-12 bg-[#1B4332] rounded-xl flex items-center justify-center mx-auto mb-2">
-            <span className="text-[#F59E0B] text-xl font-bold">ع</span>
+            <span className="text-[#F59E0B] text-xl font-bold">R</span>
           </div>
           <h1 className="font-bold text-gray-900">{school?.name ?? "School"}</h1>
           {(school?.address || school?.city) && (

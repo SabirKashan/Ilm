@@ -53,10 +53,10 @@ export function InstallPrompt() {
       </button>
       <div className="flex items-center gap-3 mb-3">
         <div className="w-10 h-10 bg-[#1B4332] rounded-xl flex items-center justify-center shrink-0">
-          <span className="text-[#F59E0B] text-lg font-bold">ع</span>
+          <span className="text-[#F59E0B] text-lg font-bold">R</span>
         </div>
         <div>
-          <p className="font-semibold text-sm text-gray-900">Install Ilm</p>
+          <p className="font-semibold text-sm text-gray-900">Install MyRahbar</p>
           <p className="text-xs text-muted-foreground">Add to home screen for quick access</p>
         </div>
       </div>

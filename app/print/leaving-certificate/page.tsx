@@ -59,7 +59,7 @@ export default async function LeavingCertificatePage({
 
             {/* Watermark */}
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0, opacity: 0.04 }}>
-              <div style={{ fontSize: 120, fontWeight: "bold", color: "#1B4332", transform: "rotate(-30deg)", fontFamily: "'Noto Nastaliq Urdu', serif" }}>ع</div>
+              <div style={{ fontSize: 120, fontWeight: "bold", color: "#1B4332", transform: "rotate(-30deg)", fontFamily: "'Noto Nastaliq Urdu', serif" }}>R</div>
             </div>
 
             <div style={{ position: "relative", zIndex: 1 }}>
@@ -68,7 +68,7 @@ export default async function LeavingCertificatePage({
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
                   {school?.logo_url
                     ? <img src={school.logo_url} alt="" style={{ width: 70, height: 70, borderRadius: 12, objectFit: "cover", border: "2px solid #1B4332" }} />
-                    : <div style={{ width: 70, height: 70, background: "#1B4332", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: "bold", color: "#F59E0B" }}>ع</div>
+                    : <div style={{ width: 70, height: 70, background: "#1B4332", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: "bold", color: "#F59E0B" }}>R</div>
                   }
                 </div>
                 <div style={{ fontSize: 22, fontWeight: "bold", color: "#1B4332", fontFamily: "'Noto Nastaliq Urdu', Georgia, serif" }}>{school?.name ?? "School"}</div>

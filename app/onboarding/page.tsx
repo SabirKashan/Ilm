@@ -182,7 +182,7 @@ export default function OnboardingPage() {
       {/* Logo */}
       <div className="mb-8 text-center">
         <div className="w-14 h-14 bg-[#F59E0B] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-          <span className="text-white text-2xl font-bold">ع</span>
+          <span className="text-white text-2xl font-bold">R</span>
         </div>
         <p className="text-white/70 text-sm">Let&apos;s set up your school</p>
       </div>
