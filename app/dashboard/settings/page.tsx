@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, Clock, XCircle, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import type { School } from "@/types/database";
+import { STARTER_TEMPLATES, submitMetaTemplate, getMetaTemplates } from "@/lib/meta-whatsapp";
 
 type SchoolForm = Pick<School, "name" | "address" | "city" | "phone" | "jazzcash_merchant_id" | "easypaisa_merchant_id" | "wati_endpoint" | "wati_token">;
 
@@ -18,6 +20,17 @@ export default function SettingsPage() {
   const [schoolId, setSchoolId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Meta WhatsApp
+  const [metaPhoneId, setMetaPhoneId]     = useState("");
+  const [metaToken, setMetaToken]         = useState("");
+  const [metaWabaId, setMetaWabaId]       = useState("");
+  const [metaProvider, setMetaProvider]   = useState<string | null>(null);
+  const [savingMeta, setSavingMeta]       = useState(false);
+  const [metaTemplates, setMetaTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [submittingTemplate, setSubmittingTemplate] = useState<string | null>(null);
+  const [showMetaGuide, setShowMetaGuide] = useState(false);
 
   // Change password
   const [currentPw, setCurrentPw]   = useState("");
@@ -46,7 +59,7 @@ export default function SettingsPage() {
       setSchoolId(sid);
       const { data: school } = await supabase.from("schools").select("*").eq("id", sid).single();
       if (school) {
-        const s = school as School;
+        const s = school as any;
         setForm({
           name: s.name ?? "",
           address: s.address ?? "",
@@ -57,6 +70,10 @@ export default function SettingsPage() {
           wati_endpoint: s.wati_endpoint ?? "",
           wati_token: s.wati_token ?? "",
         });
+        setMetaPhoneId(s.meta_phone_number_id ?? "");
+        setMetaToken(s.meta_access_token ?? "");
+        setMetaWabaId(s.meta_waba_id ?? "");
+        setMetaProvider(s.whatsapp_provider ?? null);
       }
       setLoading(false);
     }
@@ -87,6 +104,50 @@ export default function SettingsPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Password changed successfully");
     setCurrentPw(""); setNewPw(""); setConfirmPw("");
+  }
+
+  async function handleSaveMeta() {
+    if (!metaPhoneId.trim() || !metaToken.trim()) {
+      toast.error("Phone Number ID and Access Token are required");
+      return;
+    }
+    setSavingMeta(true);
+    const { error } = await (supabase as any).from("schools").update({
+      meta_phone_number_id: metaPhoneId.trim() || null,
+      meta_access_token: metaToken.trim() || null,
+      meta_waba_id: metaWabaId.trim() || null,
+      whatsapp_provider: "meta",
+    }).eq("id", schoolId);
+    setSavingMeta(false);
+    if (error) { toast.error(error.message); return; }
+    setMetaProvider("meta");
+    toast.success("Meta WhatsApp credentials saved. You are now using Meta Cloud API.");
+  }
+
+  async function handleCheckTemplates() {
+    if (!metaWabaId || !metaToken) { toast.error("Add your WABA ID and Access Token first"); return; }
+    setLoadingTemplates(true);
+    const result = await getMetaTemplates(metaWabaId, metaToken);
+    setLoadingTemplates(false);
+    if (!result.success) { toast.error(result.error ?? "Failed to fetch templates"); return; }
+    setMetaTemplates(result.templates ?? []);
+  }
+
+  async function handleSubmitTemplate(templateName: string) {
+    if (!metaWabaId || !metaToken) { toast.error("Add your WABA ID and Access Token first"); return; }
+    const tpl = STARTER_TEMPLATES.find((t) => t.name === templateName);
+    if (!tpl) return;
+    setSubmittingTemplate(templateName);
+    const result = await submitMetaTemplate(metaWabaId, metaToken, {
+      name: tpl.name,
+      language: tpl.language,
+      category: tpl.category,
+      components: tpl.components,
+    });
+    setSubmittingTemplate(null);
+    if (!result.success) { toast.error(result.error ?? "Submission failed"); return; }
+    toast.success(`"${templateName}" submitted to Meta for review. Status: ${result.status ?? "PENDING"}. Check back in 24-48h.`);
+    handleCheckTemplates();
   }
 
   async function handleSave() {
@@ -163,17 +224,131 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* WhatsApp / WATI */}
+      {/* WhatsApp — Meta Cloud API */}
       <section className="space-y-4">
-        <h2 className="text-base font-semibold text-gray-900 border-b pb-2">WhatsApp (WATI)</h2>
+        <div className="flex items-center justify-between border-b pb-2">
+          <h2 className="text-base font-semibold text-gray-900">WhatsApp (Meta Cloud API)</h2>
+          {metaProvider === "meta" && metaPhoneId
+            ? <Badge className="bg-green-100 text-green-700">Active</Badge>
+            : <Badge variant="outline" className="text-muted-foreground">Not configured</Badge>}
+        </div>
+
+        {/* Step by step guide toggle */}
+        <button
+          onClick={() => setShowMetaGuide(v => !v)}
+          className="flex items-center gap-2 text-sm text-[#1B4332] font-medium hover:underline"
+        >
+          {showMetaGuide ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          How to set up Meta WhatsApp (step-by-step)
+        </button>
+
+        {showMetaGuide && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3 text-sm">
+            <p className="font-semibold text-blue-900">Setup takes ~15 minutes. Do it once, never touch WATI again.</p>
+            <ol className="space-y-2 text-blue-800 list-decimal list-inside">
+              <li>Go to <a href="https://developers.facebook.com" target="_blank" className="underline font-medium">developers.facebook.com <ExternalLink size={12} className="inline" /></a> → Create App → Business type</li>
+              <li>Add <strong>WhatsApp</strong> product to your app</li>
+              <li>Go to <strong>WhatsApp → API Setup</strong> → copy the <strong>Phone Number ID</strong></li>
+              <li>Go to <strong>Business Settings → System Users → Add System User</strong> (Admin role)</li>
+              <li>Click the system user → <strong>Generate New Token</strong> → select your app → grant <code>whatsapp_business_messaging</code> and <code>whatsapp_business_management</code> permissions → copy the token</li>
+              <li>Go to <strong>WhatsApp → API Setup</strong> → copy the <strong>WhatsApp Business Account ID</strong> (WABA ID) — this is different from Phone Number ID</li>
+              <li>Paste all 3 values below and click Save</li>
+            </ol>
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-amber-800 text-xs">
+              ⚠️ <strong>Important:</strong> Use a fresh SIM that has never been registered on personal WhatsApp. Register it through Meta Business — do NOT use your own phone number.
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>Phone Number ID</Label>
+          <Input
+            placeholder="e.g. 123456789012345"
+            value={metaPhoneId}
+            onChange={(e) => setMetaPhoneId(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Found in Meta Developer Console → WhatsApp → API Setup</p>
+        </div>
+        <div className="space-y-2">
+          <Label>Permanent Access Token</Label>
+          <Input
+            type="password"
+            placeholder="EAAxxxxxxxxxxxxx..."
+            value={metaToken}
+            onChange={(e) => setMetaToken(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Generate from Business Settings → System Users → Generate Token</p>
+        </div>
+        <div className="space-y-2">
+          <Label>WABA ID (WhatsApp Business Account ID)</Label>
+          <Input
+            placeholder="e.g. 987654321098765"
+            value={metaWabaId}
+            onChange={(e) => setMetaWabaId(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Needed to submit and check templates. Found in API Setup page.</p>
+        </div>
+        <Button className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white" onClick={handleSaveMeta} disabled={savingMeta}>
+          {savingMeta ? "Saving..." : "Save & Use Meta API"}
+        </Button>
+
+        {/* Template management */}
+        {metaPhoneId && metaToken && metaWabaId && (
+          <div className="border rounded-lg p-4 space-y-4 mt-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold">Message Templates</p>
+                <p className="text-xs text-muted-foreground">Submit one at a time. Wait for approval before submitting the next.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleCheckTemplates} disabled={loadingTemplates}>
+                {loadingTemplates ? "Checking..." : "Check Status"}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {STARTER_TEMPLATES.map((tpl) => {
+                const existing = metaTemplates.find((t: any) => t.name === tpl.name);
+                const status = existing?.status;
+                return (
+                  <div key={tpl.name} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <code className="text-xs font-mono text-gray-700">{tpl.name}</code>
+                        {status === "APPROVED" && <Badge className="bg-green-100 text-green-700 text-[10px]"><CheckCircle2 size={10} className="mr-0.5" />Approved</Badge>}
+                        {status === "PENDING" && <Badge className="bg-amber-100 text-amber-700 text-[10px]"><Clock size={10} className="mr-0.5" />Pending review</Badge>}
+                        {status === "REJECTED" && <Badge className="bg-red-100 text-red-700 text-[10px]"><XCircle size={10} className="mr-0.5" />Rejected</Badge>}
+                        {!existing && <Badge variant="outline" className="text-[10px]">Not submitted</Badge>}
+                        {tpl.submitFirst && !existing && <Badge className="bg-[#1B4332]/10 text-[#1B4332] text-[10px]">Submit this first</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 font-mono">{tpl.bodyText}</p>
+                    </div>
+                    {!existing && (
+                      <Button size="sm" variant="outline" className="shrink-0"
+                        onClick={() => handleSubmitTemplate(tpl.name)}
+                        disabled={submittingTemplate === tpl.name}>
+                        {submittingTemplate === tpl.name ? "Submitting..." : "Submit"}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-amber-600 bg-amber-50 rounded p-2">
+              ⚠️ Submit templates <strong>one at a time</strong>, spaced at least 24–48h apart. Submitting many at once is what got the previous number banned.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* WhatsApp / WATI (Legacy) */}
+      <section className="space-y-4">
+        <h2 className="text-base font-semibold text-gray-900 border-b pb-2 text-muted-foreground">WhatsApp (WATI — Legacy)</h2>
         <p className="text-xs text-muted-foreground">
-          Enter your WATI API credentials to enable WhatsApp alerts for attendance, announcements, and fee reminders.
-          Find these in your WATI dashboard under <strong>Account &rarr; API</strong>.
+          Only use this if you already have a working WATI account. New schools should use Meta Cloud API above.
         </p>
         <div className="space-y-2">
           <Label>API Endpoint</Label>
           <Input placeholder="https://live-mt-server.wati.io/XXXXX" {...field("wati_endpoint")} />
-          <p className="text-xs text-muted-foreground">Looks like: https://live-mt-server.wati.io/12345</p>
         </div>
         <div className="space-y-2">
           <Label>API Token</Label>

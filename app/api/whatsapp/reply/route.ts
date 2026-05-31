@@ -1,11 +1,11 @@
 // POST /api/whatsapp/reply
-// Admin sends a freeform reply to a parent from the inbox.
-// Uses WATI's "sendSessionMessage" endpoint (valid within 24h window).
+// Admin sends a freeform reply to a parent — uses Meta or WATI depending on school config.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
+import { sendMetaSessionMessage } from "@/lib/meta-whatsapp";
 import type { Database } from "@/types/database";
 
 export async function POST(req: NextRequest) {
@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await caller
     .from("users").select("school_id, role").eq("id", user.id).single() as
     { data: { school_id: string; role: string } | null; error: unknown };
-
   if (!profile || profile.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -33,52 +32,55 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServiceSupabaseClient();
-
-  // Get school WATI credentials
   const { data: school } = await supabase
     .from("schools")
-    .select("wati_endpoint, wati_token")
+    .select("name, whatsapp_provider, meta_phone_number_id, meta_access_token, wati_endpoint, wati_token")
     .eq("id", profile.school_id)
-    .single() as { data: { wati_endpoint: string | null; wati_token: string | null } | null; error: unknown };
+    .single() as { data: any | null; error: unknown };
 
-  if (!school?.wati_endpoint || !school?.wati_token) {
-    return NextResponse.json({ error: "WATI not configured. Add credentials in Settings." }, { status: 400 });
-  }
+  if (!school) return NextResponse.json({ error: "School not found" }, { status: 404 });
 
-  // WATI session message (free-form text, valid within 24h of last inbound)
-  const number = phone.startsWith("+") ? phone.slice(1) : phone;
-  const res = await fetch(
-    `${school.wati_endpoint.replace(/\/$/, "")}/api/v1/sendSessionMessage/${number}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${school.wati_token}`,
-      },
-      body: JSON.stringify({ messageText: message.trim() }),
-    }
-  );
+  let result: { success: boolean; error?: string };
 
-  if (!res.ok) {
-    const err = await res.text();
-    // WATI session expired (>24h since last inbound) — tell admin
-    if (err.includes("session") || res.status === 400) {
+  // ── Meta ─────────────────────────────────────────────────
+  if (school.whatsapp_provider === "meta" && school.meta_phone_number_id && school.meta_access_token) {
+    result = await sendMetaSessionMessage(school.meta_phone_number_id, school.meta_access_token, phone, message.trim());
+    if (!result.success) {
       return NextResponse.json({
-        error: "Session expired. Parent must message you first within the last 24 hours for free-text replies.",
-        watiError: err,
+        error: result.error?.includes("session") || result.error?.includes("24")
+          ? "Session expired. Parent must message you first within 24 hours."
+          : result.error,
       }, { status: 400 });
     }
-    return NextResponse.json({ error: err }, { status: 500 });
+  }
+  // ── WATI ─────────────────────────────────────────────────
+  else if (school.wati_endpoint && school.wati_token) {
+    const number = phone.startsWith("+") ? phone.slice(1) : phone;
+    const res = await fetch(
+      `${school.wati_endpoint.replace(/\/$/, "")}/api/v1/sendSessionMessage/${number}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${school.wati_token}` },
+        body: JSON.stringify({ messageText: message.trim() }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.text();
+      return NextResponse.json({
+        error: err.includes("session")
+          ? "Session expired. Parent must message you first within 24 hours."
+          : err,
+      }, { status: 400 });
+    }
+    result = { success: true };
+  } else {
+    return NextResponse.json({ error: "WhatsApp not configured. Set up Meta API or WATI in Settings." }, { status: 400 });
   }
 
-  // Store outbound message
+  // Store outbound
   await supabase.from("whatsapp_messages").insert({
-    school_id:   profile.school_id,
-    phone,
-    direction:   "outbound",
-    body:        message.trim(),
-    wati_msg_id: null,
-    read_at:     new Date().toISOString(),
+    school_id: profile.school_id, phone, direction: "outbound",
+    body: message.trim(), wati_msg_id: null, read_at: new Date().toISOString(),
   });
 
   return NextResponse.json({ success: true });
