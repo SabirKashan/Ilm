@@ -222,6 +222,27 @@ export function sendEnrollmentWelcome(
   );
 }
 
+// Sent to parents when a teacher posts homework / daily diary.
+// Template params: [className, subjectOrTitle, details, dueDate, schoolName]
+export function sendHomework(
+  parentPhone: string,
+  className: string,
+  subjectOrTitle: string,
+  details: string,
+  dueDate: string,
+  schoolName: string,
+  endpoint: string,
+  token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(
+    parentPhone,
+    "ilm_homework",
+    [className, subjectOrTitle, details, dueDate, schoolName],
+    endpoint,
+    token
+  );
+}
+
 export function sendMonthlyReport(
   parentPhone: string,
   studentName: string,

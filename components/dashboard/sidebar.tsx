@@ -24,6 +24,7 @@ import {
   CalendarDays,
   ClipboardList,
   ArrowUpCircle,
+  BookText,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/attendance",         key: "nav.attendance",    icon: CalendarCheck },
   { href: "/dashboard/fees",               key: "nav.fees",          icon: CreditCard },
   { href: "/dashboard/exams",              key: "nav.exams",         icon: BookOpen },
+  { href: "/dashboard/homework",           key: "nav.homework",      icon: BookText },
   { href: "/dashboard/timetable",          key: "nav.timetable",     icon: CalendarDays },
   { href: "/dashboard/payroll",            key: "nav.payroll",       icon: Banknote   },
   { href: "/dashboard/announcements",      key: "nav.announcements", icon: Megaphone  },
@@ -115,6 +117,7 @@ export function Sidebar() {
 // Bottom nav for mobile
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const MOBILE_ITEMS = NAV_ITEMS.slice(0, 5); // Show first 5 items on mobile
 

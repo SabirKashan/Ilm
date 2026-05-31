@@ -7,16 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Check, X, Clock, CheckCheck, AlertCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Status = "present" | "absent" | "late";
 type Student = { id: string; name: string; roll_number: string | null };
 type AttMap = Record<string, Status>;
+type ClassRow = { id: string; name: string };
 
 export default function TeacherAttendancePage() {
   const supabase = createClient();
 
+  const [classes, setClasses] = useState<ClassRow[]>([]);
   const [classId, setClassId] = useState<string | null>(null);
-  const [className, setClassName] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [userId, setUserId] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
@@ -26,34 +28,43 @@ export default function TeacherAttendancePage() {
   const [saving, setSaving] = useState(false);
   const [noClass, setNoClass] = useState(false);
 
+  const className = classes.find((c) => c.id === classId)?.name ?? "";
+
+  // Load the teacher's classes once
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("school_id")
+        .eq("id", user.id)
+        .single() as { data: { school_id: string } | null; error: unknown };
+      if (!profile) return;
+      setSchoolId(profile.school_id);
+
+      const { data: cls } = await supabase
+        .from("classes")
+        .select("id, name")
+        .eq("school_id", profile.school_id)
+        .eq("teacher_id", user.id)
+        .order("name") as { data: ClassRow[] | null; error: unknown };
+
+      if (!cls || cls.length === 0) { setNoClass(true); setLoading(false); return; }
+      setClasses(cls);
+      setClassId(cls[0].id);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load students + attendance whenever the selected class changes
   const load = useCallback(async () => {
+    if (!classId) return;
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setUserId(user.id);
-
-    const { data: profile } = await supabase
-      .from("users")
-      .select("school_id")
-      .eq("id", user.id)
-      .single() as { data: { school_id: string } | null; error: unknown };
-    if (!profile) return;
-    setSchoolId(profile.school_id);
-
-    const { data: cls } = await supabase
-      .from("classes")
-      .select("id, name")
-      .eq("school_id", profile.school_id)
-      .eq("teacher_id", user.id)
-      .single() as { data: { id: string; name: string } | null; error: unknown };
-
-    if (!cls) { setNoClass(true); setLoading(false); return; }
-    setClassId(cls.id);
-    setClassName(cls.name);
-
     const [{ data: studsRaw }, { data: existingRaw }] = await Promise.all([
-      supabase.from("students").select("id, name, roll_number").eq("class_id", cls.id).eq("status", "active").order("name"),
-      supabase.from("attendance").select("student_id, status").eq("class_id", cls.id).eq("date", today),
+      supabase.from("students").select("id, name, roll_number").eq("class_id", classId).eq("status", "active").order("name"),
+      supabase.from("attendance").select("student_id, status").eq("class_id", classId).eq("date", today),
     ]);
 
     setStudents((studsRaw ?? []) as Student[]);
@@ -63,7 +74,7 @@ export default function TeacherAttendancePage() {
     }
     setAtt(map);
     setLoading(false);
-  }, [today]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [classId, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { load(); }, [load]);
 
@@ -137,9 +148,19 @@ export default function TeacherAttendancePage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-        <p className="text-sm text-muted-foreground">{className} · {formatDate(today)}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
+          <p className="text-sm text-muted-foreground">{className} · {formatDate(today)}</p>
+        </div>
+        {classes.length > 1 && (
+          <Select value={classId ?? ""} onValueChange={(v) => v && setClassId(v)}>
+            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Counts */}

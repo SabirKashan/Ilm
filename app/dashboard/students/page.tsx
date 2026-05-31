@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Search, Upload, Users, ChevronRight, ChevronLeft, Download, Trash2 } from "lucide-react";
+import { Plus, Search, Upload, Users, ChevronRight, ChevronLeft, Download, Trash2, IdCard } from "lucide-react";
 
 const PAGE_SIZE = 25;
 import type { Student, Class } from "@/types/database";
@@ -269,6 +269,17 @@ export default function StudentsPage() {
           <p className="text-sm text-muted-foreground mt-0.5">{filtered.length} of {students.length} student{students.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const url = filterClass === "all" ? "/print/id-cards" : `/print/id-cards?class=${filterClass}`;
+              window.open(url, "_blank");
+            }}
+            title="Print student ID cards"
+          >
+            <IdCard size={14} className="mr-1" /> ID Cards
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload size={14} className="mr-1" /> Import
           </Button>

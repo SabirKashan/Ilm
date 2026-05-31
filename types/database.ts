@@ -165,6 +165,21 @@ export interface WhatsappLog {
   sent_at: string;
 }
 
+export interface Homework {
+  id: string;
+  school_id: string;
+  class_id: string;
+  subject: string | null;
+  title: string;
+  details: string | null;
+  due_date: string | null;
+  created_by: string | null;
+  created_by_name: string | null;
+  whatsapp_sent: boolean;
+  recipient_count: number;
+  created_at: string;
+}
+
 // Supabase Database type map — must match column names exactly
 export interface Database {
   public: {
@@ -253,6 +268,12 @@ export interface Database {
         Row: WhatsappLog;
         Insert: Omit<WhatsappLog, "id"> & { id?: string };
         Update: Partial<Omit<WhatsappLog, "id">>;
+        Relationships: [];
+      };
+      homework: {
+        Row: Homework;
+        Insert: Omit<Homework, "id" | "created_at" | "recipient_count" | "whatsapp_sent"> & { id?: string; created_at?: string; recipient_count?: number; whatsapp_sent?: boolean };
+        Update: Partial<Omit<Homework, "id">>;
         Relationships: [];
       };
     };

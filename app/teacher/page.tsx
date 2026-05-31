@@ -20,13 +20,16 @@ export default async function TeacherHomePage() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Find class where this teacher is assigned
-  const { data: myClass } = await supabase
+  // Find classes where this teacher is assigned (a teacher may teach several)
+  const { data: myClasses } = await supabase
     .from("classes")
     .select("id, name, grade_level")
     .eq("school_id", profile.school_id)
     .eq("teacher_id", user.id)
-    .single() as { data: { id: string; name: string; grade_level: string | null } | null; error: unknown };
+    .order("name") as { data: { id: string; name: string; grade_level: string | null }[] | null; error: unknown };
+
+  const myClass = myClasses?.[0] ?? null;
+  const extraClassCount = (myClasses?.length ?? 0) - 1;
 
   // School name
   const { data: school } = await supabase
@@ -82,8 +85,15 @@ export default async function TeacherHomePage() {
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Your Class</p>
-              <p className="text-xl font-bold text-[#1B4332] mt-0.5">{myClass.name}</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                {extraClassCount > 0 ? "Your Classes" : "Your Class"}
+              </p>
+              <p className="text-xl font-bold text-[#1B4332] mt-0.5">
+                {myClass.name}
+                {extraClassCount > 0 && (
+                  <span className="text-sm font-medium text-muted-foreground ml-1">+{extraClassCount} more</span>
+                )}
+              </p>
               {myClass.grade_level && (
                 <p className="text-sm text-muted-foreground">{myClass.grade_level}</p>
               )}

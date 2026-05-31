@@ -6,6 +6,7 @@ import { formatPKR, formatDate } from "@/lib/utils";
 import { Users, GraduationCap, CreditCard, AlertCircle, CalendarCheck, BookOpen } from "lucide-react";
 import { Suspense } from "react";
 import type { DbUser, School, FeeVoucher, Attendance as AttendanceRow } from "@/types/database";
+import { FeeTrendChart, StudentDistribution } from "@/components/dashboard/charts";
 
 async function OverviewStats() {
   const supabase = await createServerSupabaseClient();
@@ -82,6 +83,50 @@ async function OverviewStats() {
     .select("name")
     .eq("id", schoolId)
     .single() as { data: Pick<School, "name"> | null; error: unknown };
+
+  // ── Chart data ──────────────────────────────────────────────
+  // Fee collection trend: last 6 months of paid vouchers
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
+  const { data: trendRaw } = await supabase
+    .from("fee_vouchers")
+    .select("amount, paid_at")
+    .eq("school_id", schoolId)
+    .eq("status", "paid")
+    .gte("paid_at", sixMonthsAgo) as { data: { amount: number; paid_at: string }[] | null; error: unknown };
+
+  const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const trendData: { label: string; amount: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthAmount = (trendRaw ?? [])
+      .filter((v) => {
+        if (!v.paid_at) return false;
+        const pd = new Date(v.paid_at);
+        return pd.getFullYear() === d.getFullYear() && pd.getMonth() === d.getMonth();
+      })
+      .reduce((sum, v) => sum + (v.amount ?? 0), 0);
+    trendData.push({ label: MONTH_LABELS[d.getMonth()], amount: monthAmount });
+  }
+
+  // Student distribution by class
+  const { data: classRows } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("school_id", schoolId)
+    .order("name") as { data: { id: string; name: string }[] | null; error: unknown };
+
+  const { data: studentClassRows } = await supabase
+    .from("students")
+    .select("class_id")
+    .eq("school_id", schoolId)
+    .eq("status", "active") as { data: { class_id: string | null }[] | null; error: unknown };
+
+  const distData = (classRows ?? [])
+    .map((c) => ({
+      label: c.name,
+      count: (studentClassRows ?? []).filter((s) => s.class_id === c.id).length,
+    }))
+    .filter((d) => d.count > 0);
 
   return (
     <div>
@@ -191,6 +236,14 @@ async function OverviewStats() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Charts */}
+      {(totalStudents ?? 0) > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+          <FeeTrendChart data={trendData} />
+          <StudentDistribution data={distData} />
+        </div>
+      )}
 
       {/* Empty state hint when school is freshly set up */}
       {(totalStudents === 0) && (

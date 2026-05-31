@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, AlertCircle } from "lucide-react";
 import { displayPakistaniPhone } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Student = {
   id: string;
@@ -16,14 +17,19 @@ type Student = {
   gender: "male" | "female" | null;
   parent_phone: string;
 };
+type ClassRow = { id: string; name: string };
 
 export default function TeacherStudentsPage() {
   const supabase = createClient();
   const [students, setStudents] = useState<Student[]>([]);
-  const [className, setClassName] = useState("");
+  const [classes, setClasses] = useState<ClassRow[]>([]);
+  const [classId, setClassId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [noClass, setNoClass] = useState(false);
 
+  const className = classes.find((c) => c.id === classId)?.name ?? "";
+
+  // Load the teacher's classes once
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -41,22 +47,29 @@ export default function TeacherStudentsPage() {
         .select("id, name")
         .eq("school_id", profile.school_id)
         .eq("teacher_id", user.id)
-        .single() as { data: { id: string; name: string } | null; error: unknown };
+        .order("name") as { data: ClassRow[] | null; error: unknown };
 
-      if (!cls) { setNoClass(true); setLoading(false); return; }
-      setClassName(cls.name);
+      if (!cls || cls.length === 0) { setNoClass(true); setLoading(false); return; }
+      setClasses(cls);
+      setClassId(cls[0].id);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load students whenever the selected class changes
+  useEffect(() => {
+    if (!classId) return;
+    (async () => {
+      setLoading(true);
       const { data: studs } = await supabase
         .from("students")
         .select("id, name, father_name, roll_number, gender, parent_phone")
-        .eq("class_id", cls.id)
+        .eq("class_id", classId)
         .eq("status", "active")
         .order("name");
-
       setStudents((studs ?? []) as Student[]);
       setLoading(false);
     })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [classId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (noClass) {
     return (
@@ -80,11 +93,21 @@ export default function TeacherStudentsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-        <p className="text-sm text-muted-foreground">
-          {className} · {students.length} student{students.length !== 1 ? "s" : ""}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <p className="text-sm text-muted-foreground">
+            {className} · {students.length} student{students.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        {classes.length > 1 && (
+          <Select value={classId ?? ""} onValueChange={(v) => v && setClassId(v)}>
+            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {students.length === 0 ? (

@@ -9,19 +9,23 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { BookOpen, AlertCircle, ChevronRight, ArrowLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Exam = { id: string; name: string; date: string; total_marks: number };
 type Subject = { id: string; name: string };
 type Student = { id: string; name: string; roll_number: string | null };
 type MarksMap = Record<string, Record<string, string>>; // studentId → subjectId → marks string
+type ClassRow = { id: string; name: string };
 
 export default function TeacherResultsPage() {
   const supabase = createClient();
+  const [classes, setClasses] = useState<ClassRow[]>([]);
   const [classId, setClassId] = useState<string | null>(null);
-  const [className, setClassName] = useState("");
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [noClass, setNoClass] = useState(false);
+
+  const className = classes.find((c) => c.id === classId)?.name ?? "";
 
   // Selected exam
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
@@ -31,6 +35,7 @@ export default function TeacherResultsPage() {
   const [loadingExam, setLoadingExam] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Load the teacher's classes once
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -45,20 +50,27 @@ export default function TeacherResultsPage() {
         .from("classes").select("id, name")
         .eq("school_id", profile.school_id)
         .eq("teacher_id", user.id)
-        .single() as { data: { id: string; name: string } | null; error: unknown };
+        .order("name") as { data: ClassRow[] | null; error: unknown };
 
-      if (!cls) { setNoClass(true); setLoading(false); return; }
-      setClassId(cls.id);
-      setClassName(cls.name);
+      if (!cls || cls.length === 0) { setNoClass(true); setLoading(false); return; }
+      setClasses(cls);
+      setClassId(cls[0].id);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load exams whenever the selected class changes
+  useEffect(() => {
+    if (!classId) return;
+    (async () => {
+      setLoading(true);
+      setSelectedExam(null);
       const { data: ex } = await supabase
         .from("exams").select("id, name, date, total_marks")
-        .eq("class_id", cls.id).order("date", { ascending: false });
-
+        .eq("class_id", classId).order("date", { ascending: false });
       setExams((ex ?? []) as Exam[]);
       setLoading(false);
     })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [classId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openExam = useCallback(async (exam: Exam) => {
     if (!classId) return;
@@ -216,9 +228,19 @@ export default function TeacherResultsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Results</h1>
-        <p className="text-sm text-muted-foreground">{className}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Results</h1>
+          <p className="text-sm text-muted-foreground">{className}</p>
+        </div>
+        {classes.length > 1 && (
+          <Select value={classId ?? ""} onValueChange={(v) => v && setClassId(v)}>
+            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {loading ? (
