@@ -25,6 +25,7 @@ import {
   ClipboardList,
   ArrowUpCircle,
   BookText,
+  Inbox,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -40,6 +41,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/timetable",          key: "nav.timetable",     icon: CalendarDays },
   { href: "/dashboard/payroll",            key: "nav.payroll",       icon: Banknote   },
   { href: "/dashboard/announcements",      key: "nav.announcements", icon: Megaphone  },
+  { href: "/dashboard/inbox",              key: "nav.inbox",         icon: Inbox      },
   { href: "/dashboard/reports",            key: "nav.reports",       icon: BarChart3  },
   { href: "/dashboard/activity-logs",      key: "nav.activityLogs",  icon: ClipboardList },
   { href: "/dashboard/settings",           key: "nav.settings",      icon: Settings   },

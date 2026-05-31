@@ -128,6 +128,20 @@ export default function ReportCardsPage() {
               {students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          {selectedStudentId !== "all" && (
+            <>
+              <Button variant="outline" size="sm"
+                onClick={() => window.open(`/print/report-card?exam=${exam.id}&student=${selectedStudentId}`, "_blank")}
+                className="gap-1.5">
+                <Printer size={14} /> EN Card
+              </Button>
+              <Button variant="outline" size="sm"
+                onClick={() => window.open(`/print/report-card?exam=${exam.id}&student=${selectedStudentId}&lang=ur`, "_blank")}
+                className="gap-1.5 text-[#1B4332]">
+                <Printer size={14} /> اردو کارڈ
+              </Button>
+            </>
+          )}
           <Button onClick={handlePrint} className="bg-[#1B4332] hover:bg-[#1B4332]/90 gap-2">
             <Printer size={16} /> Print
           </Button>

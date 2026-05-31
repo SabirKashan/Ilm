@@ -203,6 +203,35 @@ export function sendDailySummary(
   );
 }
 
+// ── Fee escalation ladder ─────────────────────────────────────────────
+
+// Level 2: firm notice (7+ days overdue). params: [studentName, feeType, amount, daysOverdue, schoolName]
+export function sendFeeEscalation2(
+  parentPhone: string, studentName: string, feeType: string, amount: string, daysOverdue: string,
+  schoolName: string, endpoint: string, token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(parentPhone, "ilm_fee_escalation_firm",
+    [studentName, feeType, amount, daysOverdue, schoolName], endpoint, token);
+}
+
+// Level 3: meet principal (15+ days overdue). params: [studentName, feeType, amount, schoolName]
+export function sendFeeMeetPrincipal(
+  parentPhone: string, studentName: string, feeType: string, amount: string,
+  schoolName: string, endpoint: string, token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(parentPhone, "ilm_fee_meet_principal",
+    [studentName, feeType, amount, schoolName], endpoint, token);
+}
+
+// Level 4: admin summary of 30-day+ defaulters. params: [schoolName, defaulterCount, totalAmount, date]
+export function sendDefaulterAlert(
+  adminPhone: string, schoolName: string, defaulterCount: string, totalAmount: string,
+  date: string, endpoint: string, token: string
+): Promise<WatiResult> {
+  return sendWatiTemplate(adminPhone, "ilm_fee_defaulter_alert",
+    [schoolName, defaulterCount, totalAmount, date], endpoint, token);
+}
+
 // Sent once when a student is first enrolled (onboarding or manual add)
 // Template params: [studentName, className, schoolName]
 export function sendEnrollmentWelcome(

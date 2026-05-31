@@ -24,6 +24,7 @@ type VoucherRow = {
   due_date: string;
   paid_at: string | null;
   status: FeeVoucherStatus;
+  escalation_level: number;
   students: { name: string; class_id: string | null; classes: { name: string } | null } | null;
   fee_types: { name: string } | null;
 };
@@ -45,6 +46,20 @@ function StatusBadge({ status }: { status: FeeVoucherStatus }) {
   if (status === "paid") return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Paid</Badge>;
   if (status === "overdue") return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Overdue</Badge>;
   return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pending</Badge>;
+}
+
+const ESCALATION_LABELS: Record<number, { label: string; className: string }> = {
+  1: { label: "⚠ Reminded",        className: "bg-amber-50 text-amber-700 border border-amber-200" },
+  2: { label: "⚠⚠ Firm notice",    className: "bg-orange-50 text-orange-700 border border-orange-200" },
+  3: { label: "🚨 Meet principal", className: "bg-red-50 text-red-700 border border-red-200" },
+  4: { label: "🚨 Admin alerted",  className: "bg-red-100 text-red-800 border border-red-300 font-semibold" },
+};
+
+function EscalationBadge({ level }: { level: number }) {
+  if (!level || level === 0) return null;
+  const info = ESCALATION_LABELS[level];
+  if (!info) return null;
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${info.className}`}>{info.label}</span>;
 }
 
 export default function FeesPage() {
@@ -108,7 +123,7 @@ export default function FeesPage() {
     setLoadingVouchers(true);
     const query = supabase
       .from("fee_vouchers")
-      .select("id, student_id, fee_type_id, amount, due_date, paid_at, status, students(name, class_id, classes(name)), fee_types(name)")
+      .select("id, student_id, fee_type_id, amount, due_date, paid_at, status, escalation_level, students(name, class_id, classes(name)), fee_types(name)")
       .order("due_date", { ascending: false });
 
     const { data } = await query;
@@ -310,7 +325,12 @@ export default function FeesPage() {
                         <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                           {new Date(v.due_date).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
                         </TableCell>
-                        <TableCell><StatusBadge status={eff} /></TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <StatusBadge status={eff} />
+                            <EscalationBadge level={v.escalation_level ?? 0} />
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1.5">
                             {eff !== "paid" && (

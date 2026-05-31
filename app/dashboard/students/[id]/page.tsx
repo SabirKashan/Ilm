@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { ArrowLeft, Edit2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Edit2, AlertCircle, FileText } from "lucide-react";
 import type { Student, Class, Attendance, FeeVoucher, Exam, Result } from "@/types/database";
 import { formatDate, formatPKR, displayPakistaniPhone, formatPakistaniPhone } from "@/lib/utils";
 
@@ -230,7 +230,15 @@ export default function StudentProfilePage() {
               <h1 className="text-xl font-bold text-gray-900">{student.name}</h1>
               {student.father_name && <p className="text-sm text-muted-foreground">{student.father_name}</p>}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline"
+                onClick={() => window.open(`/print/leaving-certificate?student=${student.id}`, "_blank")}>
+                <FileText size={14} className="mr-1" /> Leaving Cert (EN)
+              </Button>
+              <Button size="sm" variant="outline"
+                onClick={() => window.open(`/print/leaving-certificate?student=${student.id}&lang=ur`, "_blank")}>
+                <FileText size={14} className="mr-1" /> سند (اردو)
+              </Button>
               <Button size="sm" variant="outline" onClick={() => { setEditForm(student); setShowEdit(true); }}>
                 <Edit2 size={14} className="mr-1" /> Edit
               </Button>
