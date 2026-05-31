@@ -38,7 +38,11 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/admin/");
 
   if (isPublic) {
-    if (user) {
+    // Only redirect logged-in users away from auth pages (login/register/forgot).
+    // Print, pay, and admin routes must be accessible whether or not the user
+    // is logged in — redirecting them breaks window.open() print pages.
+    const isAuthPage = publicRoutes.includes(pathname);
+    if (isAuthPage && user) {
       const { data: profile } = await supabase
         .from("users")
         .select("role")

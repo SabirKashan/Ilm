@@ -254,179 +254,208 @@ export default function StudentsPage() {
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pagedStudents = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  // class-first navigation state
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const selectedClass = classes.find((c) => c.id === selectedClassId);
 
-  const classMap = Object.fromEntries(classes.map((c) => [c.id, c.name]));
+  const classStudents = students.filter((s) =>
+    s.class_id === selectedClassId &&
+    (filterStatus === "all" || s.status === filterStatus) &&
+    (!search || s.name.toLowerCase().includes(search.toLowerCase()) ||
+      (s.father_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (s.roll_number ?? "").toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const classStudentCount = (classId: string) =>
+    students.filter((s) => s.class_id === classId && s.status === "active").length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{filtered.length} of {students.length} student{students.length !== 1 ? "s" : ""}</p>
+        <div className="flex items-center gap-3">
+          {selectedClassId && (
+            <button
+              onClick={() => { setSelectedClassId(null); setSearch(""); }}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {selectedClass ? selectedClass.name : "Students"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {selectedClass
+                ? `${classStudents.length} student${classStudents.length !== 1 ? "s" : ""}`
+                : `${classes.length} class${classes.length !== 1 ? "es" : ""} · ${students.filter(s => s.status === "active").length} active students`}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const url = filterClass === "all" ? "/print/id-cards" : `/print/id-cards?class=${filterClass}`;
-              window.open(url, "_blank");
-            }}
-            title="Print student ID cards"
-          >
-            <IdCard size={14} className="mr-1" /> ID Cards
-          </Button>
+          {selectedClassId && (
+            <Button
+              variant="outline" size="sm"
+              onClick={() => window.open(`/print/id-cards?class=${selectedClassId}`, "_blank")}
+              title="Print ID cards for this class"
+            >
+              <IdCard size={14} className="mr-1" /> ID Cards
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload size={14} className="mr-1" /> Import
           </Button>
-          <Button className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white" onClick={() => { setShowAdd(true); setStep(1); setForm(EMPTY_FORM); }}>
+          <Button className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white" onClick={() => {
+            setShowAdd(true); setStep(1);
+            setForm({ ...EMPTY_FORM, class_id: selectedClassId ?? "" });
+          }}>
             <Plus size={16} className="mr-1" /> Add
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, father, roll…"
-            className="pl-8"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          />
-        </div>
-        <Select value={filterClass} onValueChange={(v) => { setFilterClass(v ?? "all"); setPage(1); }}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="All classes" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All classes</SelectItem>
-            {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v ?? "active"); setPage(1); }}>
-          <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="all">All statuses</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Table */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-[#1B4332]/20 rounded-xl">
-          <Users size={48} className="text-[#1B4332]/30 mb-4" />
-          <h3 className="font-semibold text-gray-900 mb-1">
-            {students.length === 0 ? "No students yet" : "No students match your search"}
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {students.length === 0 ? "Add your first student or import from CSV." : "Try adjusting your search or filters."}
-          </p>
-          {students.length === 0 && (
-            <Button className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white" onClick={() => setShowAdd(true)}>
-              <Plus size={16} className="mr-1" /> Add Student
-            </Button>
-          )}
-        </div>
-      ) : (
+      {/* ── CLASS GRID VIEW ── */}
+      {!selectedClassId && (
         <>
-        <div className="border rounded-xl overflow-hidden bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead>Student</TableHead>
-                <TableHead className="hidden sm:table-cell">Class</TableHead>
-                <TableHead className="hidden md:table-cell">Roll #</TableHead>
-                <TableHead className="hidden lg:table-cell">Parent Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-8" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pagedStudents.map((s) => (
-                <TableRow
-                  key={s.id}
-                  className="cursor-pointer hover:bg-gray-50 group"
-                  onClick={() => router.push(`/dashboard/students/${s.id}`)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 shrink-0">
-                        <AvatarImage src={s.photo_url ?? ""} alt={s.name} />
-                        <AvatarFallback className="bg-[#1B4332]/10 text-[#1B4332] text-sm font-medium">
-                          {s.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{s.name}</p>
-                        {s.father_name && <p className="text-xs text-muted-foreground">{s.father_name}</p>}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                    {s.class_id ? classMap[s.class_id] ?? "—" : "—"}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                    {s.roll_number ?? "—"}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                    {s.parent_phone ? displayPakistaniPhone(s.parent_phone) : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={s.status === "active"
-                      ? "bg-green-100 text-green-700 hover:bg-green-100"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-100"
-                    }>
-                      {s.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 justify-end">
-                      <ChevronRight size={16} className="text-muted-foreground" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100"
-                        onClick={(e) => { e.stopPropagation(); setDeleteStudent(s); }}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        {/* Pagination */}
-        {filtered.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
-            </span>
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1}>
-                <ChevronLeft size={14} />
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}>
-                <ChevronRight size={14} />
-              </Button>
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {[1,2,3,4,5,6].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
             </div>
-          </div>
-        )}
+          ) : classes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-[#1B4332]/20 rounded-xl">
+              <Users size={48} className="text-[#1B4332]/30 mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-1">No classes yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">Create classes first, then add students.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {classes.map((c) => {
+                const count = classStudentCount(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedClassId(c.id)}
+                    className="bg-white border rounded-xl p-4 text-left hover:border-[#1B4332]/40 hover:shadow-sm transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-[#1B4332]/10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#1B4332]/20 transition-colors">
+                      <Users size={20} className="text-[#1B4332]" />
+                    </div>
+                    <p className="font-semibold text-gray-900 text-sm leading-tight">{c.name}</p>
+                    {c.grade_level && <p className="text-xs text-muted-foreground mt-0.5">{c.grade_level}</p>}
+                    <p className="text-xs text-[#1B4332] font-medium mt-2">{count} student{count !== 1 ? "s" : ""}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
 
-      {/* Add Student Dialog */}
+      {/* ── STUDENT LIST VIEW (inside a class) ── */}
+      {selectedClassId && (
+        <>
+          {/* Search + status filter */}
+          <div className="flex flex-wrap gap-2">
+            <div className="relative flex-1 min-w-[180px]">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, father, roll…"
+                className="pl-8"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "active")}>
+              <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {classStudents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-[#1B4332]/20 rounded-xl">
+              <Users size={48} className="text-[#1B4332]/30 mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-1">No students in {selectedClass?.name}</h3>
+              <p className="text-sm text-muted-foreground mb-4">Add students to get started.</p>
+              <Button className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white" onClick={() => {
+                setShowAdd(true); setStep(1); setForm({ ...EMPTY_FORM, class_id: selectedClassId });
+              }}>
+                <Plus size={16} className="mr-1" /> Add Student
+              </Button>
+            </div>
+          ) : (
+            <div className="border rounded-xl overflow-hidden bg-white">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead>Student</TableHead>
+                    <TableHead className="hidden md:table-cell">Roll #</TableHead>
+                    <TableHead className="hidden lg:table-cell">Parent Phone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-8" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {classStudents.map((s) => (
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer hover:bg-gray-50 group"
+                      onClick={() => router.push(`/dashboard/students/${s.id}`)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 shrink-0">
+                            <AvatarImage src={s.photo_url ?? ""} alt={s.name} />
+                            <AvatarFallback className="bg-[#1B4332]/10 text-[#1B4332] text-sm font-medium">
+                              {s.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{s.name}</p>
+                            {s.father_name && <p className="text-xs text-muted-foreground">{s.father_name}</p>}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                        {s.roll_number ?? "—"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                        {s.parent_phone ? displayPakistaniPhone(s.parent_phone) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={s.status === "active"
+                          ? "bg-green-100 text-green-700 hover:bg-green-100"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-100"
+                        }>
+                          {s.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 justify-end">
+                          <ChevronRight size={16} className="text-muted-foreground" />
+                          <Button
+                            variant="ghost" size="sm"
+                            className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100"
+                            onClick={(e) => { e.stopPropagation(); setDeleteStudent(s); }}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Delete Student Confirm */}
       <Dialog open={!!deleteStudent} onOpenChange={(o) => { if (!o) setDeleteStudent(null); }}>
         <DialogContent className="max-w-sm">
