@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, UserCog, Eye, EyeOff } from "lucide-react";
+import { Plus, UserCog, Eye, EyeOff, KeyRound } from "lucide-react";
 import type { DbUser } from "@/types/database";
 import { displayPakistaniPhone } from "@/lib/utils";
 
@@ -22,6 +22,10 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [resetTeacher, setResetTeacher] = useState<Teacher | null>(null);
+  const [resetPw, setResetPw] = useState("");
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -40,6 +44,23 @@ export default function TeachersPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
+
+  async function handleResetPassword() {
+    if (!resetTeacher || !resetPw.trim()) return;
+    if (resetPw.trim().length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    setResetting(true);
+    const res = await fetch("/api/teachers/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teacherId: resetTeacher.id, newPassword: resetPw.trim() }),
+    });
+    const json = await res.json();
+    setResetting(false);
+    if (!res.ok) { toast.error(json.error ?? "Failed to reset password"); return; }
+    toast.success(`Password reset for ${resetTeacher.name}`);
+    setResetTeacher(null);
+    setResetPw("");
+  }
 
   async function handleAddTeacher() {
     if (!name.trim() || !phone.trim() || !password.trim()) {
@@ -105,6 +126,7 @@ export default function TeachersPage() {
                 <TableHead>Teacher</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead className="hidden sm:table-cell">Login</TableHead>
+                <TableHead className="text-right"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -126,12 +148,63 @@ export default function TeachersPage() {
                   <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
                     Logs in with phone + password
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-gray-900"
+                      onClick={() => { setResetTeacher(t); setResetPw(""); setShowResetPw(false); }}
+                    >
+                      <KeyRound size={14} className="mr-1" /> Reset Password
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       )}
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetTeacher} onOpenChange={(o) => { if (!o) { setResetTeacher(null); setResetPw(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reset Password — {resetTeacher?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Set a new password for this teacher. Share it with them securely.
+            </p>
+            <div className="space-y-2">
+              <Label>New Password *</Label>
+              <div className="relative">
+                <Input
+                  type={showResetPw ? "text" : "password"}
+                  placeholder="Min. 6 characters"
+                  value={resetPw}
+                  onChange={(e) => setResetPw(e.target.value)}
+                  autoFocus
+                  className="pr-10"
+                />
+                <button type="button" onClick={() => setShowResetPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showResetPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTeacher(null)}>Cancel</Button>
+            <Button
+              className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white"
+              onClick={handleResetPassword}
+              disabled={resetting || !resetPw.trim()}
+            >
+              {resetting ? "Resetting..." : "Reset Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) { setName(""); setPhone(""); setPassword(""); } }}>
         <DialogContent className="max-w-sm">

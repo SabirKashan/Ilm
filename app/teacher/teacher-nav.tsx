@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, CalendarCheck, Users, BookOpen, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Users, BookOpen, LogOut, Settings } from "lucide-react";
 
 const NAV = [
   { href: "/teacher",            label: "Home",       icon: LayoutDashboard },
   { href: "/teacher/attendance", label: "Attendance", icon: CalendarCheck   },
   { href: "/teacher/students",   label: "Students",   icon: Users           },
   { href: "/teacher/results",    label: "Results",    icon: BookOpen        },
+  { href: "/teacher/settings",   label: "Settings",   icon: Settings        },
 ];
 
 export function TeacherNav({ teacherName }: { teacherName: string }) {

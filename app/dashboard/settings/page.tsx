@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import type { School } from "@/types/database";
 
 type SchoolForm = Pick<School, "name" | "address" | "city" | "phone" | "jazzcash_merchant_id" | "easypaisa_merchant_id" | "wati_endpoint" | "wati_token">;
@@ -17,6 +18,13 @@ export default function SettingsPage() {
   const [schoolId, setSchoolId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Change password
+  const [currentPw, setCurrentPw]   = useState("");
+  const [newPw, setNewPw]           = useState("");
+  const [confirmPw, setConfirmPw]   = useState("");
+  const [showNewPw, setShowNewPw]   = useState(false);
+  const [savingPw, setSavingPw]     = useState(false);
   const [form, setForm] = useState<SchoolForm>({
     name: "",
     address: "",
@@ -61,6 +69,24 @@ export default function SettingsPage() {
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         setForm((prev) => ({ ...prev, [key]: e.target.value })),
     };
+  }
+
+  async function handleChangePassword() {
+    if (!currentPw || !newPw || !confirmPw) { toast.error("All password fields are required"); return; }
+    if (newPw.length < 6) { toast.error("New password must be at least 6 characters"); return; }
+    if (newPw !== confirmPw) { toast.error("Passwords don't match"); return; }
+    setSavingPw(true);
+    // Re-authenticate with current password first
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: profile } = await supabase.from("users").select("phone").eq("id", user!.id).single() as { data: { phone: string } | null; error: unknown };
+    if (!profile) { toast.error("Could not verify identity"); setSavingPw(false); return; }
+    const { error: signInError } = await supabase.auth.signInWithPassword({ phone: profile.phone, password: currentPw });
+    if (signInError) { toast.error("Current password is incorrect"); setSavingPw(false); return; }
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setSavingPw(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Password changed successfully");
+    setCurrentPw(""); setNewPw(""); setConfirmPw("");
   }
 
   async function handleSave() {
@@ -172,6 +198,38 @@ export default function SettingsPage() {
       >
         {saving ? "Saving..." : "Save Settings"}
       </Button>
+
+      {/* Change Password */}
+      <section className="space-y-4">
+        <h2 className="text-base font-semibold text-gray-900 border-b pb-2">Change Password</h2>
+        <div className="space-y-2">
+          <Label>Current Password</Label>
+          <Input type="password" placeholder="Enter current password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>New Password</Label>
+          <div className="relative">
+            <Input
+              type={showNewPw ? "text" : "password"}
+              placeholder="Min. 6 characters"
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              className="pr-10"
+            />
+            <button type="button" onClick={() => setShowNewPw(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Confirm New Password</Label>
+          <Input type="password" placeholder="Re-enter new password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+        </div>
+        <Button variant="outline" onClick={handleChangePassword} disabled={savingPw}>
+          {savingPw ? "Updating..." : "Update Password"}
+        </Button>
+      </section>
     </div>
   );
 }
